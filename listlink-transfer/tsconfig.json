@@ -1,0 +1,11 @@
+// Path: apps/web/tsconfig.json  (paths section only — merge into existing if needed)
+// NOTE: This likely already exists. Ensure "@" points to "src/*" so imports like "@/components/*"
+// resolve correctly given your /src/ directory structure.
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  }
+}

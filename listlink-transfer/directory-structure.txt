@@ -1,0 +1,57 @@
+﻿Filtered folder PATH listing (excluding .next, node_modules, .git)
+C:.
++--- apps
+|   \--- web
+|       +--- prisma
+|       |   +--- migrations
+|       |   |   +--- 20250905213427_init
+|       |   |   |   |   migration.sql
+|       |   |   |   migration_lock.toml
+|       |   |   dev.db
+|       |   |   schema.prisma
+|       +--- public
+|       |   |   file.svg
+|       |   |   globe.svg
+|       |   |   next.svg
+|       |   |   vercel.svg
+|       |   |   window.svg
+|       +--- src
+|       |   +--- app
+|       |   |   +--- create
+|       |   |   |   |   page.tsx
+|       |   |   +--- lists
+|       |   |   |   |   page.tsx
+|       |   |   |   favicon.ico
+|       |   |   |   globals.css
+|       |   |   |   layout.tsx
+|       |   |   |   page.tsx
+|       |   \--- lib
+|       |       |   prisma.ts
+|       |   .env
+|       |   .gitignore
+|       |   .prettierignore
+|       |   eslint.config.mjs
+|       |   next.config.ts
+|       |   next-env.d.ts
+|       |   package.json
+|       |   postcss.config.mjs
+|       |   README.md
+|       |   tsconfig.json
++--- listlink-startup
+|   |   inspiration.txt
+|   |   startup.txt
+|   |   SUMMARY.md
++--- listlink-transfer
+|   |   directory-structure.txt
+|   |   globals.css
+|   |   high-level_instructions.txt
+|   |   layout.tsx
+|   |   README.md
++--- packages
+|   .eslintignore
+|   .gitignore
+|   .prettierignore
+|   doc.txt
+|   package.json
+|   pnpm-lock.yaml
+|   pnpm-workspace.yaml

@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+.next/
+.turbo/
+dist/
+build/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Prisma local databases
+prisma/*.db*
+prisma/*.sqlite
+**/prisma/*.db*
+**/prisma/*.sqlite
+
+# Editors/IDEs
+.vscode/
+.idea/
+
+# OS artifacts
+.DS_Store
+Thumbs.db

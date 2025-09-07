@@ -1,0 +1,333 @@
+Here’s a **structure + style–only roadmap** written for Codex CLI’s TUI: clear, technical, and focused on building an engaging UI/UX for MyListLink. No installs, just what to design and implement.
+
+---
+
+# Product Principles (guide everything)
+
+* **Overlap-first discovery:** every surface should expose crossings between lists and items.
+* **Micro-actions near the fold:** create, like, save, follow, share—always close to primary content.
+* **Fast first paint:** server components deliver content; hydrate only what’s interactive.
+* **Clarity > cleverness:** readable hierarchy, consistent spacing, strong typographic rhythm.
+* **Accessible by default:** keyboard, screen readers, sufficient contrast, motion-safe.
+
+---
+
+# Information Architecture (routes + sections)
+
+* `/` **Home**
+
+  * Hero (what/why), primary CTA, “Start a list” secondary CTA
+  * Trending Items, Hot Overlaps, New Lists Today
+* `/create` **Create List Wizard**
+
+  * Step 1: Title & description
+  * Step 2: Exactly 7 items (name + optional note), progress indicator (0/7…7/7)
+* `/list/[slug]` **List Page**
+
+  * Header (title, owner, published)
+  * Seven items (numbered), reactions, share
+  * **Overlaps panel**: related lists ranked by overlap
+  * Comments (MVP: stub)
+* `/item/[slug]` **Item Page**
+
+  * Item header (name, type, tags)
+  * Appears in X lists (paginated), “Trail chips” to hop lists
+* `/user/[handle]` **Profile**
+
+  * Avatar, bio, themes
+  * Lists (tabs: Published, Drafts), Followers/Following
+* `/discover` **Discovery**
+
+  * Tabs: Trending Items | Hot Overlaps | Fresh Lists | Challenges (stub)
+* `/signin` **Auth**
+
+  * Email magic link form, OAuth buttons (enabled when keys exist)
+* `/(marketing)` **Footer Pages**
+
+  * /about, /tos, /privacy (simple text layout)
+
+**Definition of Done:** every route renders on server, is linkable, and has clear fallbacks for loading/empty/error.
+
+---
+
+# Page Layout System
+
+* **App Shell**
+
+  * Top Nav: logo (left), search (center), actions (right: Create, Sign in/Avatar)
+  * Content container: `max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-8`
+  * Footer: compact link groups
+* **Grids**
+
+  * 12-column mental model; implement with Tailwind utilities (not CSS Grid tokens)
+  * Cards list: responsive 1→2→3 columns `grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6`
+* **Spacing scale (Tailwind)**
+
+  * XS 4px, S 8px, M 12px, L 16px, XL 24px, 2XL 32px, 3XL 48px (map to Tailwind’s default where possible)
+* **Typography**
+
+  * Display: `text-3xl/normal font-semibold tracking-tight`
+  * H1: `text-2xl/7 font-semibold`
+  * H2: `text-xl/7 font-semibold`
+  * Body: `text-base/7 text-muted-foreground`
+  * Mono (counts/stats): `font-mono text-sm`
+* **Color & states**
+
+  * Primary: brand (500/600/700 hover/active), Accent: subtle surface highlight
+  * Muted: backgrounds for cards & skeletons
+  * Success, Warning, Danger tokens; Focus ring: `ring-2 ring-offset-2`
+
+**Definition of Done:** shell is consistent; headers, sections, spacing feel uniform across routes.
+
+---
+
+# Design Tokens (Tailwind config)
+
+* **Colors:** `brand`, `accent`, `muted`, `border`, `input`, `ring`, `success`, `warning`, `danger`
+* **Radius:** `sm=8px`, `md=12px`, `lg=16px`, `xl=24px`, `2xl=32px` (cards/buttons use `xl`)
+* **Shadow:** `sm`, `md`, `lg` (cards get `md` on hover elevate to `lg`)
+* **Transitions:** `duration-150 ease-out` (hover), `duration-200 ease-in` (dismiss)
+* **Motion-safe:** wrap animations in `motion-safe:` variants
+
+**Definition of Done:** tokens usable via classes; no hard-coded hex in components.
+
+---
+
+# Core Component Library (build once, reuse everywhere)
+
+**Foundations**
+
+* `Button` (variants: primary, secondary, ghost, destructive; sizes: sm/md/lg; loading)
+* `Input`, `Textarea`, `Select`, `Checkbox`, `Radio`, `Switch`
+* `Label`, `FormField` (with error/help text)
+* `Card` (header, content, footer slots)
+* `Badge` (solid/outline, info/success/warn)
+* `Avatar`
+* `Tabs`, `DropdownMenu`, `Dialog`, `Tooltip`
+* `Skeleton` (block, text line, avatar, card)
+* `Kbd` (for keyboard hints)
+
+**Domain**
+
+* `ListCard` (title, owner, 7-item preview, overlap badge)
+* `ItemChip` (clickable, shows count: “in 42 lists”)
+* `OverlapPanel` (list of related lists: overlap count + tiny item preview)
+* `TrailChips` (horizontal scroller of next hops)
+* `ListEditor` (7 slot rows; add/remove within limits; reorder via drag or arrow buttons)
+* `ReactionBar` (like, save, share; count bubbles)
+* `UserBar` (avatar, follow/unfollow button, follower count)
+* `SearchBox` (typeahead; sections: Items, Lists)
+* `EmptyState` (illustration, message, CTA)
+* `Pagination` (prev/next + page size)
+* `StatsStrip` (mono numerals for quick scannability)
+
+**Definition of Done:** components documented by usage examples; variants cover all UI cases used in MVP.
+
+---
+
+# State Model (every surface supports 4 states)
+
+* **Loading:** skeletons at correct proportions (list page: header 1, 7 lines, side panel)
+* **Empty:** tailored copy + one primary CTA (e.g., “No overlaps yet—share your list”)
+* **Error:** calm message + retry and contact link
+* **Success:** smooth transition; minimal celebratory motion (`motion-safe:animate-in`)
+
+**Definition of Done:** QA each route by forcing these states.
+
+---
+
+# Interaction & Micro-motion
+
+* Buttons: tap/hover elevation + slight scale (`scale-[.99]` on active)
+* Overlap chips: hover reveals shared item count tooltip
+* List creation: progress meter (0/7 → 7/7), subtle confetti on publish (motion-safe)
+* Search: 150ms debounce, highlight matched substring
+* Keyboard:
+
+  * Global: `/` focuses search
+  * Create wizard: `Enter` advances, `Shift+Enter` adds next item row, `Ctrl+K` opens item quick-add dialog
+* Focus management: send focus to first invalid field on submit errors
+
+**Definition of Done:** interactions feel responsive, never flashy; keyboard paths work.
+
+---
+
+# Page Blueprints (what to render and how)
+
+## Home `/`
+
+* Hero: title + subtitle, Primary CTA “Start a list”
+* “Trending Items” grid (ItemCard with count)
+* “Hot Overlaps” (pair cards: List A ↔ List B with “3/7 overlap”)
+* “New Today” (recent ListCards)
+* Footer promo: “How overlaps work” link
+
+## Create `/create`
+
+* Step 1: Title (max 80 chars), description (max 240)
+* Step 2: 7 item slots:
+
+  * Item name input + optional note
+  * Add/Remove controls with live “7/7” counter
+  * Dedup suggestion (“‘Peach Ice Cream’ already added”)
+* Publish summary dialog → confirm
+* After publish: redirect to `/list/[slug]` with success toast
+
+## List `/list/[slug]`
+
+* Header: title, owner, published date, share button
+* Items: numbered 1–7, each with optional note
+* ReactionBar
+* OverlapPanel: top 6 related lists with overlap counts; “View all overlaps”
+* Comments (MVP placeholder)
+
+## Item `/item/[slug]`
+
+* Header: item name, type, tags, list count
+* Appears In: ListCards grouped by tag/topic
+* TrailChips: “Next hop” suggestions
+* ReactionBar (save item, follow tag)
+
+## User `/user/[handle]`
+
+* Header: avatar, bio, link
+* Tabs: Published, Drafts (Drafts visible to owner only)
+* Side: Followers/Following, themes
+
+## Discover `/discover`
+
+* Tabs: Trending Items | Hot Overlaps | Fresh Lists
+* Filtering: timeframe (24h/7d/30d), category/tag
+* Sorting: popularity, recency, overlap intensity
+
+**Definition of Done:** each page uses shared components; responsive from 320px–1440px.
+
+---
+
+# Accessibility Checklist (apply while building)
+
+* All interactive elements have visible focus (`focus:outline-none focus:ring-2 ring-offset-2`)
+* Labels bound to inputs; errors use `aria-describedby`
+* Headings form a logical outline (H1→H2→H3)
+* Lists of items use `<ul>/<li>`; numbered lists use `<ol>`
+* Color contrast ≥ WCAG AA
+* Non-text affordances also conveyed by text (icons have sr-only labels)
+* Reduced motion respected: `motion-reduce:transition-none motion-reduce:animate-none`
+* Search results are keyboard-navigable and aria-announced
+
+**Definition of Done:** axe/lighthouse pass without critical a11y issues.
+
+---
+
+# Content & Copy Rules
+
+* Clear verbs: “Create list”, “Publish”, “Save”, “Share”
+* Empty states encourage next action (“Try adding your top 7—start with one!”)
+* Microcopy explains overlaps in 1–2 sentences where relevant
+* Truncate long titles/notes with `line-clamp-2/3`
+* Numbers use locale formatting; large counts compact (e.g., 12.3k)
+
+---
+
+# SEO & Social Metadata (structure, not infra)
+
+* Each entity page sets:
+
+  * `<title>`: `List: {title} — MyListLink` or `Item: {name} — MyListLink`
+  * `<meta name="description">` pulled from description/notes
+  * `og:title`, `og:description`, `og:image` (use a placeholder now)
+  * JSON-LD: `ItemList` for lists (7 items), `Thing` for items
+* `next-sitemap` structure:
+
+  * Include `/list/*` and `/item/*`; exclude drafts/private
+  * Priority: items > lists > users > discover > root
+
+**Definition of Done:** view source shows JSON-LD; share previews look correct (fallback image fine for MVP).
+
+---
+
+# Performance & Perceived Speed
+
+* Server components for lists/items; client components only for interactive parts
+* Image components with width/height; thumbnails small & lazy
+* Defer noncritical code (`dynamic(() => import(...), { ssr:false })` only when necessary)
+* Skeletons instead of spinners; always reserve layout space
+* Preload likely next pages (hover prefetch for OverlapPanel links)
+
+**Definition of Done:** lighthouse perf ≥ 90 on entity pages locally; CLS ≈ 0.
+
+---
+
+# Theming & Modes
+
+* Start with light theme; prep for dark:
+
+  * Theme tokens live in CSS variables, toggled by `data-theme`
+  * Components consume vars (no hardcoded colors)
+* High-contrast mode: optional variant using same token system
+
+**Definition of Done:** flipping a root data attribute visually swaps the theme without code changes.
+
+---
+
+# Build Sequence for Codex (what to tackle, in order)
+
+1. **App Shell + Tokens**
+
+   * Implement layout, nav, footer, spacing/typography, color tokens
+   * Build foundational components (Button, Card, Input, Avatar, Skeleton)
+2. **Home + Discover**
+
+   * Implement sections with placeholder data + real structure
+3. **List & Item Pages**
+
+   * Domain components: ListCard, ItemChip, OverlapPanel, TrailChips, ReactionBar
+   * Loading/empty/error variants included
+4. **Create Wizard**
+
+   * Two steps, progress logic, validation, publish flow UI (hook to existing APIs)
+5. **Search Box**
+
+   * Typeahead UI + keyboard navigation; plug to existing endpoint
+6. **Profile**
+
+   * Header, tabs, list grids; owner vs visitor states
+7. **Accessibility & Motion Polish**
+
+   * Focus traps, aria labels, motion-safe animations
+8. **SEO & Share**
+
+   * Titles, meta, JSON-LD, OG fallbacks
+9. **Performance Pass**
+
+   * Skeleton tuning, defer noncritical hydration, image sizing, prefetch rules
+
+Each step should include the four UI states (loading, empty, error, success) and responsive behavior.
+
+---
+
+# Visual Cues (quick wireframe notes for Codex)
+
+**ListCard**
+
+* Header: Title (clamped), Owner chip (avatar + handle)
+* Body: 7 numbered mini-rows (truncate to a single line)
+* Footer: overlap badge (e.g., “3 shared”), reaction buttons (ghost)
+
+**OverlapPanel**
+
+* Title: “Overlaps”
+* List of compact ListCards (small), each with `badge: “3/7”`
+* “View all overlaps” link
+
+**TrailChips**
+
+* Horizontal scrollable row of chips: `{Next list title}` with tiny overlap count
+
+**ListEditor row**
+
+* `[drag]` `#` `Input(name)` `[note?]` `[remove]`
+* Error line below when invalid; progress meter at top
+
+---
+

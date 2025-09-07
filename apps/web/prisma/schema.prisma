@@ -1,0 +1,140 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum ListStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum Visibility {
+  PUBLIC
+  UNLISTED
+  PRIVATE
+}
+
+enum ItemKind {
+  TEXT
+  URL
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  lists     List[]
+  handle    String   @unique
+  avatarUrl String?
+  bio       String?
+
+  // social
+  following Follow[] @relation("following")
+  followers Follow[] @relation("followers")
+  likes     ListLike[]
+  saves     ListSave[]
+  comments  ListComment[]
+}
+
+model List {
+  id          Int        @id @default(autoincrement())
+  ownerId     Int
+  owner       User       @relation(fields: [ownerId], references: [id])
+  title       String
+  description String?
+  visibility  Visibility @default(PUBLIC)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  items       ListItem[]
+  status      ListStatus @default(DRAFT)
+  slug        String     @unique
+  publishedAt DateTime?
+  likesCount  Int        @default(0)
+  savesCount  Int        @default(0)
+  commentsCount Int      @default(0)
+  likes       ListLike[]
+  saves       ListSave[]
+  comments    ListComment[]
+}
+
+model Item {
+  id         Int         @id @default(autoincrement())
+  url        String?
+  title      String?
+  note       String?
+  createdAt  DateTime    @default(now())
+  listItems  ListItem[]
+  kind       ItemKind    @default(TEXT)
+  slug       String      @unique
+  normalizedKey String   @unique
+  aliases    ItemAlias[]
+}
+
+model ListItem {
+  listId  Int
+  itemId  Int
+  position Int
+  addedAt DateTime @default(now())
+
+  list List @relation(fields: [listId], references: [id])
+  item Item @relation(fields: [itemId], references: [id])
+
+  @@id([listId, itemId])
+  @@unique([listId, position])
+}
+
+model ItemAlias {
+  id        Int      @id @default(autoincrement())
+  itemId    Int
+  item      Item     @relation(fields: [itemId], references: [id])
+  aliasKey  String   @unique
+  createdAt DateTime @default(now())
+}
+
+model Follow {
+  followerId Int
+  followeeId Int
+  follower   User @relation("following", fields: [followerId], references: [id])
+  followee   User @relation("followers", fields: [followeeId], references: [id])
+  createdAt  DateTime @default(now())
+
+  @@id([followerId, followeeId])
+}
+
+model ListLike {
+  userId   Int
+  listId   Int
+  user     User @relation(fields: [userId], references: [id])
+  list     List @relation(fields: [listId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@id([userId, listId])
+}
+
+model ListSave {
+  userId   Int
+  listId   Int
+  user     User @relation(fields: [userId], references: [id])
+  list     List @relation(fields: [listId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@id([userId, listId])
+}
+
+model ListComment {
+  id        Int      @id @default(autoincrement())
+  listId    Int
+  userId    Int
+  body      String
+  parentId  Int?
+  createdAt DateTime @default(now())
+
+  list      List @relation(fields: [listId], references: [id])
+  user      User @relation(fields: [userId], references: [id])
+}
