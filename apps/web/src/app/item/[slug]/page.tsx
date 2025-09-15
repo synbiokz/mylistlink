@@ -1,17 +1,28 @@
 import { ListCard } from "@/components/domain/ListCard";
 import { TrailChips } from "@/components/domain/TrailChips";
 import { getItemBySlug, listsForItem } from "@/data/items";
+import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
 
 export default async function ItemPage({ params }: { params: { slug: string } }) {
   const item = await getItemBySlug(params.slug);
   if (!item) return notFound();
+  let workId: number | null = null;
+  try {
+    const map = await prisma.itemWork.findUnique({ where: { itemId: item.id } } as any);
+    if ((map as any)?.workId) workId = Number((map as any).workId);
+  } catch {}
   const lists = await listsForItem(item.id, 12);
   return (
     <div className="space-y-8">
       <header className="space-y-2">
         <h1 className="display">{item.title ?? item.url ?? "Item"}</h1>
         <p className="muted">Appears in {lists.length} lists</p>
+        {workId && (
+          <p className="text-sm">
+            See the canonical page: <a className="underline" href={`/work/${workId}`}>Work #{workId}</a>
+          </p>
+        )}
       </header>
 
       <section className="space-y-3">
