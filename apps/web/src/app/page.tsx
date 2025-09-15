@@ -45,7 +45,7 @@ export default async function HomePage() {
             {trending.map((it) => (
               <Card key={it.id}>
                 <div className="font-semibold">
-                  <Link href={`/item/${it.slug}`} className="hover:underline">
+                  <Link href={`/work/${it.id}`} className="hover:underline">
                     {it.title ?? "Untitled"}
                   </Link>
                 </div>

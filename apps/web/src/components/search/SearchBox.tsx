@@ -21,7 +21,7 @@ export function SearchBox() {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [results, setResults] = useState<Result[]>([]);
-  const [suggest, setSuggest] = useState<{ lists: Array<{ title: string; slug: string }>; users: Array<{ handle: string; name?: string | null }>; items: Array<{ title?: string | null; slug: string }> } | null>(null);
+  const [suggest, setSuggest] = useState<{ lists: Array<{ title: string; slug: string }>; users: Array<{ handle: string; name?: string | null }>; items: Array<{ id: number; title?: string | null }> } | null>(null);
   const boxRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -50,7 +50,7 @@ export function SearchBox() {
         if (cancelled) return;
         const lists = (d?.recentLists || []).map((l: any) => ({ title: l.title as string, slug: l.slug as string }));
         const users = (d?.topUsers || []).map((u: any) => ({ handle: u.handle as string, name: (u.name as string) ?? null }));
-        const items = (d?.hotItems || []).map((i: any) => ({ title: (i.title as string) ?? null, slug: i.slug as string }));
+        const items = (d?.hotItems || []).map((i: any) => ({ id: Number(i.id), title: (i.title as string) ?? null }));
         setSuggest({ lists, users, items });
       } catch {
         if (!cancelled) setSuggest(null);
@@ -140,8 +140,8 @@ export function SearchBox() {
               <div className="mb-2 text-xs muted">Suggestions</div>
               <div className="flex flex-wrap gap-2">
                 {(suggest.items || []).map((it, i) => (
-                  <button key={`it-${i}`} className="px-2 py-1 rounded-md bg-[rgb(var(--color-accent))] text-sm" onMouseDown={(e) => e.preventDefault()} onClick={() => router.push(`/item/${it.slug}`)}>
-                    {it.title ?? "Item"}
+                  <button key={`it-${i}`} className="px-2 py-1 rounded-md bg-[rgb(var(--color-accent))] text-sm" onMouseDown={(e) => e.preventDefault()} onClick={() => router.push(`/work/${it.id}`)}>
+                    {it.title ?? "Work"}
                   </button>
                 ))}
                 {(suggest.lists || []).map((l, i) => (
