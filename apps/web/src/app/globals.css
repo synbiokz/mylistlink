@@ -60,6 +60,11 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Ensure pointer cursor for interactive elements */
+a, button, [role="button"], .cursor-pointer {
+  cursor: pointer;
+}
+
 .container-page {
   @apply mx-auto px-4 sm:px-6 lg:px-8;
   max-width: 1100px;

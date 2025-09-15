@@ -1,6 +1,14 @@
 import prisma from "@/lib/prisma";
 import { slugify } from "@/data/util";
 
+export type Slot = {
+  position: number;
+  itemId: number | null;
+  title: string | null;
+  slug: string | null;
+  url: string | null;
+};
+
 export async function createDraft(ownerId: number, title: string, description?: string | null) {
   const slug = await uniqueListSlug(slugify(title).slice(0, 60));
   return prisma.list.create({ data: { ownerId, title, description: description ?? null, slug, status: "DRAFT" } });
@@ -17,6 +25,76 @@ export async function addOrUpdateItem(listId: number, itemId: number, position: 
     update: { position },
     create: { listId, itemId, position },
   });
+}
+
+/**
+ * Transactional slot setter implementing move/replace semantics.
+ * - If item already exists on the list at oldPos, move to position.
+ * - If destination position is occupied by another item, remove that row first.
+ * Always returns the 7-slot snapshot after mutation.
+ */
+export async function setSlotAtomic(listId: number, itemId: number, position: number) {
+  if (!Number.isInteger(listId) || !Number.isInteger(itemId)) throw new Error("Invalid ids");
+  if (position < 1 || position > 7) throw new Error("Position must be 1..7");
+
+  await prisma.$transaction(async (tx) => {
+    const existing = await tx.listItem.findUnique({ where: { listId_itemId: { listId, itemId } } });
+    const dest = await tx.listItem.findUnique({ where: { listId_position: { listId, position } } }).catch(() => null);
+
+    // If dest is occupied by a different item, clear it first
+    if (dest && (existing ? dest.itemId !== existing.itemId : true)) {
+      await tx.listItem.delete({ where: { listId_itemId: { listId, itemId: dest.itemId } } });
+    }
+
+    if (existing) {
+      if (existing.position !== position) {
+        await tx.listItem.update({
+          where: { listId_itemId: { listId, itemId } },
+          data: { position },
+        });
+      }
+    } else {
+      await tx.listItem.create({ data: { listId, itemId, position } });
+    }
+  }).catch(async (err) => {
+    // On any constraint race, surface a consistent error for the API to translate
+    (err as any).code = (err as any).code || "CONFLICT_POSITION";
+    throw err;
+  });
+
+  const slots = await getSlotsSnapshot(listId);
+  return { slots };
+}
+
+export async function removeSlot(listId: number, position: number) {
+  if (position < 1 || position > 7) throw new Error("Position must be 1..7");
+  await prisma.listItem
+    .delete({ where: { listId_position: { listId, position } } })
+    .catch(() => null);
+  const slots = await getSlotsSnapshot(listId);
+  return { slots };
+}
+
+export async function getSlotsSnapshot(listId: number): Promise<Slot[]> {
+  const links = await prisma.listItem.findMany({
+    where: { listId },
+    include: { item: true },
+  });
+  const map = new Map<number, { itemId: number; title: string | null; slug: string | null; url: string | null }>();
+  for (const li of links) {
+    map.set(li.position, {
+      itemId: li.itemId,
+      title: li.item?.title ?? null,
+      slug: li.item?.slug ?? null,
+      url: li.item?.url ?? null,
+    });
+  }
+  const slots: Slot[] = [];
+  for (let p = 1; p <= 7; p++) {
+    const v = map.get(p);
+    slots.push({ position: p, itemId: v?.itemId ?? null, title: v?.title ?? null, slug: v?.slug ?? null, url: v?.url ?? null });
+  }
+  return slots;
 }
 
 export async function publishList(listId: number) {
@@ -46,4 +124,3 @@ async function uniqueListSlug(base: string) {
   while (await prisma.list.findUnique({ where: { slug } })) slug = `${base}-${i++}`;
   return slug;
 }
-

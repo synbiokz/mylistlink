@@ -1,0 +1,324 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum WorkKind {
+  Book
+  Movie
+  TVSeries
+  Album
+  Track
+  Comic
+  Game
+  Other
+}
+
+enum ListStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum Visibility {
+  PUBLIC
+  UNLISTED
+  PRIVATE
+}
+
+enum ItemKind {
+  TEXT
+  URL
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  lists     List[]
+  handle    String   @unique
+  avatarUrl String?
+  bio       String?
+  // sample data flags
+  isSample  Boolean  @default(false)
+  seedBatch String?
+
+  // social
+  following Follow[] @relation("following")
+  followers Follow[] @relation("followers")
+  likes     ListLike[]
+  saves     ListSave[]
+  comments  ListComment[]
+
+  // auth (NextAuth)
+  accounts  Account[]
+  sessions  Session[]
+
+  // vibes summary
+  vibes     UserVibe[]
+}
+
+model List {
+  id             Int           @id @default(autoincrement())
+  ownerId        Int
+  owner          User          @relation(fields: [ownerId], references: [id])
+  title          String
+  description    String?
+  visibility     Visibility    @default(PUBLIC)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  items          ListItem[]
+  workItems      ListWork[]
+  status         ListStatus    @default(DRAFT)
+  slug           String        @unique
+  publishedAt    DateTime?
+  likesCount     Int           @default(0)
+  savesCount     Int           @default(0)
+  commentsCount  Int           @default(0)
+  likes          ListLike[]
+  saves          ListSave[]
+  comments       ListComment[]
+  // sample data flags
+  isSample       Boolean       @default(false)
+  seedBatch      String?
+
+  // vibes and lineage
+  vibes          ListVibe[]
+  lineage        ListLineage?
+  childrenLineages ListLineage[] @relation("LineageParentList")
+}
+
+model Item {
+  id              Int            @id @default(autoincrement())
+  url             String?
+  title           String?
+  note            String?
+  createdAt       DateTime       @default(now())
+  listItems       ListItem[]
+  kind            ItemKind       @default(TEXT)
+  slug            String         @unique
+  normalizedKey   String         @unique
+  aliases         ItemAlias[]
+  // sample data flags
+  isSample        Boolean        @default(false)
+  seedBatch       String?
+
+  childrenLineages ListLineage[] @relation("LineageParentItem")
+  // work mapping
+  workMap        ItemWork?
+}
+
+model ListItem {
+  listId   Int
+  itemId   Int
+  position Int
+  addedAt  DateTime @default(now())
+
+  list List @relation(fields: [listId], references: [id])
+  item Item @relation(fields: [itemId], references: [id])
+
+  @@id([listId, itemId])
+  @@unique([listId, position])
+}
+
+model ItemAlias {
+  id        Int      @id @default(autoincrement())
+  itemId    Int
+  item      Item     @relation(fields: [itemId], references: [id])
+  aliasKey  String   @unique
+  createdAt DateTime @default(now())
+}
+
+model Follow {
+  followerId Int
+  followeeId Int
+  follower   User @relation("following", fields: [followerId], references: [id])
+  followee   User @relation("followers", fields: [followeeId], references: [id])
+  createdAt  DateTime @default(now())
+
+  @@id([followerId, followeeId])
+}
+
+model ListLike {
+  userId   Int
+  listId   Int
+  user     User @relation(fields: [userId], references: [id])
+  list     List @relation(fields: [listId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@id([userId, listId])
+}
+
+model ListSave {
+  userId   Int
+  listId   Int
+  user     User @relation(fields: [userId], references: [id])
+  list     List @relation(fields: [listId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@id([userId, listId])
+}
+
+model ListComment {
+  id        Int      @id @default(autoincrement())
+  listId    Int
+  userId    Int
+  body      String
+  parentId  Int?
+  createdAt DateTime @default(now())
+
+  list      List @relation(fields: [listId], references: [id])
+  user      User @relation(fields: [userId], references: [id])
+}
+
+/// Vibes represent recurring cross-list signals
+model Vibe {
+  id          Int       @id @default(autoincrement())
+  slug        String    @unique
+  label       String
+  description String?
+  createdAt   DateTime  @default(now())
+  // sample flags (if seeding vibes)
+  isSample    Boolean   @default(false)
+  seedBatch   String?
+
+  lists       ListVibe[]
+  users       UserVibe[]
+}
+
+model ListVibe {
+  listId  Int
+  vibeId  Int
+  weight  Int      @default(1)
+  source  String?  // 'auto' | 'user'
+  addedAt DateTime @default(now())
+
+  list    List @relation(fields: [listId], references: [id])
+  vibe    Vibe @relation(fields: [vibeId], references: [id])
+
+  @@id([listId, vibeId])
+}
+
+model UserVibe {
+  userId        Int
+  vibeId        Int
+  count         Int      @default(0)
+  lastTouchedAt DateTime?
+
+  user    User @relation(fields: [userId], references: [id])
+  vibe    Vibe @relation(fields: [vibeId], references: [id])
+
+  @@id([userId, vibeId])
+}
+
+model ListLineage {
+  id                Int   @id @default(autoincrement())
+  listId            Int   @unique
+  spawnedFromListId Int?
+  spawnedFromItemId Int?
+
+  list       List  @relation(fields: [listId], references: [id])
+  parentList List? @relation("LineageParentList", fields: [spawnedFromListId], references: [id])
+  parentItem Item? @relation("LineageParentItem", fields: [spawnedFromItemId], references: [id])
+}
+
+// Work-centric models (Phase A)
+model Work {
+  id        Int        @id @default(autoincrement())
+  kind      WorkKind
+  title     String
+  year      Int?
+  creator   String?
+  qid       String?    @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  meta      WorkMeta?
+  ids       ExternalId[]
+  listItems ListWork[]
+  itemMaps  ItemWork[]
+
+  @@index([title])
+}
+
+model ExternalId {
+  id        Int    @id @default(autoincrement())
+  workId    Int
+  work      Work   @relation(fields: [workId], references: [id])
+  authority String
+  extId     String
+
+  @@unique([authority, extId])
+  @@index([workId])
+}
+
+model WorkMeta {
+  workId  Int   @id
+  work    Work  @relation(fields: [workId], references: [id])
+  summary Json
+}
+
+model ListWork {
+  listId  Int
+  workId  Int
+  addedAt DateTime @default(now())
+
+  list List @relation(fields: [listId], references: [id])
+  work Work @relation(fields: [workId], references: [id])
+
+  @@id([listId, workId])
+  @@index([listId])
+  @@index([workId])
+}
+
+model ItemWork {
+  itemId Int @id
+  workId Int
+
+  item Item @relation(fields: [itemId], references: [id])
+  work Work @relation(fields: [workId], references: [id])
+
+  @@index([workId])
+}
+
+/// NextAuth models (adapted for Int userId)
+model Account {
+  id                 Int     @id @default(autoincrement())
+  userId             Int
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?
+  access_token       String?
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id            String   @id @default(cuid())
+  sessionToken  String   @unique
+  userId        Int
+  expires       DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}

@@ -1,0 +1,3 @@
+﻿We want to improve the UI by creating a fully functional user signup and signin process. This must also be modular so that once we migrate from our local database (db) to Supabase we do not have to redo work. Think hard about this and search the internet and your own knowledge to ensure we select a  robust, proven, best-practice workflow. The backend must be swappable. Conceive a plan that leverages what is already in the codebase. Consider this carefully to integrate all the factors I mentioned.
+
+We will leave credentialing alone for now. Let’s get the UI design fixed first.

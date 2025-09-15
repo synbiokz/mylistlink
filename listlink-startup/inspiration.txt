@@ -1,4 +1,6 @@
-﻿Here’s the “why these are so sticky” take, then a practical teardown you can lift for your own build.
+﻿Guide to building an engaging and interactive website. Uses Reddit, IMDB, Goodreads, MyAnimeList and RottenTomatoes for inspiration.
+
+Here’s the “why these are so sticky” take, then a practical teardown you can lift for your own build.
 Big picture: the shared playbook
 All five sites succeed by combining three reinforcing loops:
 1. Entity hubs → infinite rabbit holes. Every person/book/film/series has a canonical “hub” page that fans orbit around. Those hubs interlink (cast ↔ titles, authors ↔ books, studios ↔ catalogs), forming a navigable knowledge graph that always gives you a next click. (IMDb calls out personalization on top of this, based on your ratings & watchlist. (IMDb Help))

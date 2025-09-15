@@ -5,10 +5,9 @@ export async function searchAll(q: string, limit = 5) {
   if (!query) return { items: [], lists: [] };
 
   const [items, lists] = await Promise.all([
-    prisma.item.findMany({ where: { title: { contains: query } }, take: limit }),
-    prisma.list.findMany({ where: { title: { contains: query }, status: "PUBLISHED" }, take: limit }),
+    prisma.item.findMany({ where: { title: { contains: query, mode: "insensitive" } }, take: limit }),
+    prisma.list.findMany({ where: { title: { contains: query, mode: "insensitive" }, status: "PUBLISHED" }, take: limit, select: { id: true, slug: true, title: true } }),
   ]);
 
   return { items, lists };
 }
-

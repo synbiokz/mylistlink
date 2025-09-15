@@ -1,15 +1,9 @@
-Accomplish these steps immediately to become fully project-oriented:
+Accomplish these steps immediately to become project-oriented:
 
-
-Read the file at the following link. It is the summary of the project design: https://docs.google.com/document/d/12_vO-8p_0BG0x3ynBNdnErNUeSycrHkMDj1QQasjAK0/edit?usp=sharing
-If you have issues then let me know.
-Read the following file for inspiration of what makes a great user-oriented website:
-https://docs.google.com/document/d/1dZRk5ycwq0q9aqO4ARbPWAZwjk__QBpUh6U_Sqq_Da0/edit?usp=sharing 
-Read the file named “SUMMARY.md” in the directory named “listlink-startup” and fully digest and internalize it. It provides contemporary context to resume your work.
-Review the entire codebase.
+Review the entire codebase until you are completely familiar with it.
+Read the "README.md" file in the listlink-transfer directory.
 Read and internalize this blurb about what the website mylistlink.com will be:
-Mylistlink is where curious and interesting people go to create, share, and learn. Each user makes lists of 7 items around a theme. An example is “Best icecream flavors”. Users explore the lists of others via search and, more excitingly, via “crosses” where a user’s list may contain 1 or more of the same elements as another user. Using the above example, another user may make a list themed on “Best peach dishes” and have peach icecream on that list.
-
+Mylistlink is where curious and interesting people go to create, share, and learn. Each user makes lists of 7 items around a theme. An example is “Best icecream flavors”. Users explore the lists of others via search and, more excitingly, via “crosses” where a user’s list may contain 1 or more of the same elements as another user. Using the above example, another user may make a list themed on “Best peach dishes”, and peach icecream will be on both lists.
 
 
 Git user information:

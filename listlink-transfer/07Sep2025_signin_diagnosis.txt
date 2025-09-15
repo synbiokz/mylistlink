@@ -1,0 +1,60 @@
+Here are the **rock-solid, widely used** signup/sign-in options that are free (or have generous free tiers), well-documented, and composable. I grouped them by approach and then tell you which I’d pick for ListLink (Next.js + Prisma).
+
+# Shortlist for your stack (Next.js + Prisma)
+
+* **Auth.js (formerly NextAuth)** — free, open-source, built for Next.js, tons of OAuth providers, plus credentials/magic-link options. My #1 for ListLink if you want to own sessions in your app. ([authjs.dev][1], [next-auth.js.org][2])
+* **Supabase Auth** — great if you’re moving to Postgres anyway; Auth integrates tightly with RLS policies and has a clearly documented, generous **free** tier. ([Supabase][3])
+
+# The usual suspects (all proven, composable)
+
+## 1) Libraries you run inside your app
+
+* **Auth.js (NextAuth)** – Next.js-first auth with >80 pre-made OAuth providers, plus Credentials and Email/Magic Link. Free & open source. ([authjs.dev][1], [next-auth.js.org][2])
+* **Passport.js** – battle-tested Node/Express middleware with hundreds of strategies (username/password, Google, etc.). Very flexible if you want to wire low-level flows yourself. ([Passport.js][4])
+
+## 2) Backend platforms with built-in Auth
+
+* **Supabase Auth** – JWT-based auth integrated with Postgres + Row Level Security; supports password, magic links/OTP, and social/SSO. Generous **Free** plan (MAU limits published on pricing page). ([Supabase][3])
+* **Firebase Authentication** – easy SDKs and optional drop-in UI; supports email/password, phone, and major OAuth providers; strong docs and “no-cost to start” pricing. ([Firebase][5])
+* **Appwrite Auth** – open-source BaaS; supports email/password, OAuth, anonymous, magic links, etc., with good docs. ([appwrite.io][6])
+
+## 3) Managed identity providers (hosted, prebuilt UI)
+
+* **Clerk** – polished prebuilt components for web/mobile; generous **Free** tier (first 10k MAUs) and solid docs. Great if you want to move fast with minimal custom code. ([Clerk][7])
+* **Auth0** – enterprise-grade identity with a **Free** developer plan; broad protocol support and excellent documentation/examples. ([Auth0][8])
+* **AWS Cognito** – widely used on AWS; “user pools” provide OIDC/OAuth and social login; good fit if you’re already on AWS. ([AWS Documentation][9])
+
+## 4) Self-hosted identity servers (maximum control)
+
+* **Keycloak** – open-source IAM server (OIDC/OAuth2/SAML), social login, theming, admin console; very mature. Best if you need SSO, multi-realm, or on-prem control. ([Keycloak][10])
+* **FusionAuth (Community)** – free to self-host; modern features (including WebAuthn/passkeys) with clear docs; paid cloud available later if needed. ([FusionAuth][11])
+* **Ory Kratos** – open-source, headless identity service for self-service flows (login, registration, recovery, verification); cloud or self-host. ([Ory Corp][12])
+
+# Composability cheat-sheet
+
+All of the above support **multiple “ways to log in”** (email/password, OAuth social logins, magic links/OTP). Notable add-ons:
+
+* **Passkeys/WebAuthn**: directly supported (production-ready) in FusionAuth; experimental in Auth.js today. ([FusionAuth][13], [authjs.dev][14])
+* **SSO/SAML/OIDC**: turnkey in Auth0, Cognito, Keycloak, FusionAuth; available in Supabase via external IdPs/SSO features. ([Auth0][8], [AWS Documentation][9], [Keycloak][10])
+
+# What I’d pick for ListLink right now
+
+* **If we stay with Prisma and our own DB**: **Auth.js** (Next.js-native, fast to wire, zero SaaS lock-in). ([authjs.dev][1])
+* **If we’re moving the DB to Supabase**: **Supabase Auth** (tight RLS integration; one provider for DB + auth + storage; solid free tier). ([Supabase][3])
+
+If you want, I can map either choice into concrete tasks (files, adapters, guards, and the /create flow) so “working signup + persistent lists” land cleanly in our current codebase.
+
+[1]: https://authjs.dev/?utm_source=chatgpt.com "Auth.js | Authentication for the Web"
+[2]: https://next-auth.js.org/providers/credentials?utm_source=chatgpt.com "Credentials"
+[3]: https://supabase.com/docs/guides/auth?utm_source=chatgpt.com "Auth | Supabase Docs"
+[4]: https://www.passportjs.org/?utm_source=chatgpt.com "Passport.js"
+[5]: https://firebase.google.com/docs/auth?utm_source=chatgpt.com "Firebase Authentication"
+[6]: https://appwrite.io/products/auth?utm_source=chatgpt.com "Auth"
+[7]: https://clerk.com/pricing?utm_source=chatgpt.com "Pricing"
+[8]: https://auth0.com/pricing?utm_source=chatgpt.com "Pricing"
+[9]: https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pools.html?utm_source=chatgpt.com "Amazon Cognito user pools"
+[10]: https://www.keycloak.org/documentation?utm_source=chatgpt.com "Documentation"
+[11]: https://fusionauth.io/pricing?utm_source=chatgpt.com "FusionAuth Pricing | Free and Flexible Plans for Your ..."
+[12]: https://www.ory.sh/docs/kratos/quickstart?utm_source=chatgpt.com "Ory Kratos Identity Server Quickstart"
+[13]: https://fusionauth.io/docs/lifecycle/authenticate-users/passwordless/webauthn-passkeys?utm_source=chatgpt.com "Authentication With WebAuthn & Passkeys"
+[14]: https://authjs.dev/getting-started/authentication/webauthn?utm_source=chatgpt.com "WebAuthn"
