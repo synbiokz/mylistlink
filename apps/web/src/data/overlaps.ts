@@ -6,31 +6,54 @@ export type OverlapRow = {
   similarity: number;
 };
 
+// Work-first implementation (uses ListWork). Falls back to legacy Item-based if Work tables are unavailable.
 export async function computeSimilarLists(listId: number, limit = 10): Promise<OverlapRow[]> {
-  // Fetch item IDs in the source list
-  const items = await prisma.listItem.findMany({ where: { listId }, select: { itemId: true } });
-  const itemIds = items.map((i) => i.itemId);
-  if (itemIds.length === 0) return [];
+  try {
+    // Fetch Work IDs in the source list
+    const works = await prisma.listWork.findMany({ where: { listId }, select: { workId: true } } as any);
+    const workIds = works.map((w: any) => w.workId);
+    if (workIds.length === 0) return [];
 
-  // Find other lists sharing any of these items
-  const others = await prisma.listItem.groupBy({
-    by: ["listId"],
-    where: { itemId: { in: itemIds }, listId: { not: listId }, list: { status: "PUBLISHED" } },
-    _count: { itemId: true },
-    orderBy: { _count: { itemId: "desc" } },
-    take: limit * 2,
-  });
+    // Find other lists sharing any of these Works
+    const others = await prisma.listWork.groupBy({
+      by: ["listId"],
+      where: { workId: { in: workIds }, listId: { not: listId }, list: { status: "PUBLISHED" } } as any,
+      _count: { workId: true },
+      orderBy: { _count: { workId: "desc" } },
+      take: limit * 2,
+    } as any);
 
-  // Get counts for union size (always 7 for source list once published)
-  const pairs: OverlapRow[] = [];
-  for (const o of others) {
-    const otherCount = await prisma.listItem.count({ where: { listId: o.listId } });
-    const shared = o._count.itemId;
-    const union = 7 + otherCount - shared;
-    const similarity = union > 0 ? shared / union : 0;
-    pairs.push({ otherListId: o.listId, sharedCount: shared, similarity });
+    const pairs: OverlapRow[] = [];
+    for (const o of others) {
+      const otherCount = await prisma.listWork.count({ where: { listId: o.listId } } as any);
+      const shared = (o as any)._count.workId as number;
+      const union = 7 + otherCount - shared;
+      const similarity = union > 0 ? shared / union : 0;
+      pairs.push({ otherListId: o.listId as number, sharedCount: shared, similarity });
+    }
+    return pairs.sort((a, b) => b.similarity - a.similarity).slice(0, limit);
+  } catch {
+    // Legacy fallback: Item-based overlaps
+    const items = await prisma.listItem.findMany({ where: { listId }, select: { itemId: true } });
+    const itemIds = items.map((i) => i.itemId);
+    if (itemIds.length === 0) return [];
+    const others = await prisma.listItem.groupBy({
+      by: ["listId"],
+      where: { itemId: { in: itemIds }, listId: { not: listId }, list: { status: "PUBLISHED" } },
+      _count: { itemId: true },
+      orderBy: { _count: { itemId: "desc" } },
+      take: limit * 2,
+    });
+    const pairs: OverlapRow[] = [];
+    for (const o of others) {
+      const otherCount = await prisma.listItem.count({ where: { listId: o.listId } });
+      const shared = o._count.itemId;
+      const union = 7 + otherCount - shared;
+      const similarity = union > 0 ? shared / union : 0;
+      pairs.push({ otherListId: o.listId, sharedCount: shared, similarity });
+    }
+    return pairs.sort((a, b) => b.similarity - a.similarity).slice(0, limit);
   }
-  return pairs.sort((a, b) => b.similarity - a.similarity).slice(0, limit);
 }
 
 // Convenience helper used by the list page to fetch similar lists
@@ -46,8 +69,18 @@ export async function overlapsForList(listId: number, limit = 10): Promise<Array
     .filter((x): x is { list: any; overlap: number; similarity: number } => !!x.list);
 }
 
-// Aggregate hot overlaps by sampling recent published lists and taking their best match.
+// Simple per-process cache for hot overlaps
+type HotCacheEntry = { at: number; key: string; data: Array<{ a: any; b: any; overlap: number; similarity: number }> };
+const HOT_CACHE = new Map<string, HotCacheEntry>();
+const HOT_TTL_MS = 30_000;
+
+// Aggregate hot overlaps by sampling recent published lists and taking their best match (Work-based).
 export async function hotOverlaps(sample = 20, take = 6): Promise<Array<{ a: any; b: any; overlap: number; similarity: number }>> {
+  const key = `${sample}:${take}`;
+  const now = Date.now();
+  const hit = HOT_CACHE.get(key);
+  if (hit && now - hit.at < HOT_TTL_MS) return hit.data;
+
   const recent = await prisma.list.findMany({ where: { status: "PUBLISHED" }, orderBy: { publishedAt: "desc" }, take: sample });
   const results: Array<{ a: any; b: any; overlap: number; similarity: number }> = [];
   for (const l of recent) {
@@ -58,5 +91,7 @@ export async function hotOverlaps(sample = 20, take = 6): Promise<Array<{ a: any
     if (other) results.push({ a: l, b: other, overlap: best.sharedCount, similarity: best.similarity });
   }
   results.sort((x, y) => y.overlap - x.overlap || y.similarity - x.similarity);
-  return results.slice(0, take);
+  const out = results.slice(0, take);
+  HOT_CACHE.set(key, { at: now, key, data: out });
+  return out;
 }

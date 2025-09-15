@@ -93,13 +93,61 @@ function externalAliasKey(source: string, id: string) {
   return `${source}:${id}`;
 }
 
+// Simple cache for trending
+type TrendCacheEntry = { at: number; items: Array<{ id: number; slug: string; title: string | null; count: number }> };
+const TREND_CACHE = new Map<string, TrendCacheEntry>();
+const TREND_TTL_MS = 30_000;
+
 export async function trendingItems(limit = 6): Promise<Array<{ id: number; slug: string; title: string | null; count: number }>> {
-  // Items that appear most across published lists
-  const items = await prisma.item.findMany({
-    where: { listItems: { some: { list: { status: "PUBLISHED" } } } },
-    orderBy: { listItems: { _count: "desc" } },
-    take: limit,
-    select: { id: true, slug: true, title: true, _count: { select: { listItems: true } } },
-  });
-  return items.map((i) => ({ id: i.id, slug: i.slug, title: i.title ?? null, count: i._count.listItems }));
+  const key = String(limit);
+  const now = Date.now();
+  const hit = TREND_CACHE.get(key);
+  if (hit && now - hit.at < TREND_TTL_MS) return hit.items;
+
+  try {
+    // Work-first: find top Works by ListWork appearances in published lists,
+    // then pick a representative Item (via ItemWork) to provide a slug for navigation.
+    const top = await prisma.listWork.groupBy({
+      by: ["workId"],
+      where: { list: { status: "PUBLISHED" } } as any,
+      _count: { workId: true },
+      orderBy: { _count: { workId: "desc" } },
+      take: limit * 2,
+    } as any);
+
+    const workIds = top.map((t: any) => t.workId as number);
+    if (workIds.length === 0) {
+      TREND_CACHE.set(key, { at: now, items: [] });
+      return [];
+    }
+    // Fetch representative Item per Work (first mapping wins)
+    const maps = await prisma.itemWork.findMany({ where: { workId: { in: workIds } }, include: { item: true } } as any);
+    const byWork = new Map<number, { slug: string; title: string | null }>();
+    for (const m of maps) {
+      if (!byWork.has((m as any).workId) && (m as any).item?.slug) {
+        byWork.set((m as any).workId, { slug: (m as any).item.slug, title: (m as any).item.title ?? null });
+      }
+    }
+    const out: Array<{ id: number; slug: string; title: string | null; count: number }> = [];
+    for (const t of top) {
+      const workId = (t as any).workId as number;
+      const rep = byWork.get(workId);
+      if (!rep) continue; // skip if no representative item to link to
+      out.push({ id: workId, slug: rep.slug, title: rep.title ?? null, count: (t as any)._count.workId as number });
+      if (out.length >= limit) break;
+    }
+    TREND_CACHE.set(key, { at: now, items: out });
+    return out;
+  } catch {
+    // Legacy fallback: Item-based trending
+    const items = await prisma.item.findMany({
+      where: { listItems: { some: { list: { status: "PUBLISHED" } } } },
+      orderBy: { listItems: { _count: "desc" } },
+      take: limit,
+      select: { id: true, slug: true, title: true, _count: { select: { listItems: true } } },
+    });
+    const out = items.map((i) => ({ id: i.id, slug: i.slug, title: i.title ?? null, count: i._count.listItems }));
+    TREND_CACHE.set(key, { at: now, items: out });
+    return out;
+  }
 }
