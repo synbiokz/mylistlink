@@ -8,13 +8,17 @@ async function getWork(id: number) {
 }
 
 async function listsForWork(workId: number) {
-  const links = await prisma.listWork.findMany({
-    where: { workId, list: { status: "PUBLISHED" } } as any,
-    include: { list: { include: { owner: true } } } as any,
-    orderBy: { list: { publishedAt: "desc" } } as any,
-    take: 24,
-  } as any);
-  return links.map((lw: any) => lw.list);
+  try {
+    const links = await prisma.listWork.findMany({
+      where: { workId, list: { status: "PUBLISHED" } } as any,
+      include: { list: { include: { owner: true } } } as any,
+      orderBy: { list: { publishedAt: "desc" } } as any,
+      take: 24,
+    } as any);
+    return links.map((lw: any) => lw.list);
+  } catch {
+    return [];
+  }
 }
 
 export default async function WorkPage({ params }: { params: Promise<{ id: string }> }) {

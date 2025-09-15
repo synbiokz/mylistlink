@@ -27,6 +27,7 @@ export async function POST(req: Request) {
     url: body.url ?? null,
   });
   // Phase A dual-write: ensure a corresponding Work exists for this external input
+  let workId: number | null = null;
   try {
     const work = await upsertWorkFromExternal({
       source: String(body.source),
@@ -37,7 +38,8 @@ export async function POST(req: Request) {
       summary: body.summary ?? null,
       url: body.url ?? null,
     });
-    if (item?.id && work?.id) await mapItemToWork(item.id, work.id);
+    if (work?.id) workId = Number(work.id);
+    if (item?.id && workId) await mapItemToWork(item.id, workId);
   } catch (e) {
     // best-effort; do not fail legacy flow
     console.warn("[dual-write] work upsert failed", e);
@@ -53,6 +55,7 @@ export async function POST(req: Request) {
     source: String(body.source),
     sourceId: String(body.sourceId),
     url: item.url ?? null,
+    workId,
   };
   return withRequestId(NextResponse.json(payload), requestId);
 }

@@ -90,8 +90,12 @@ export function SearchBox() {
               body: JSON.stringify(it),
             });
             const json = await r.json();
-            const slug: string | undefined = json?.item?.slug;
-            if (slug) router.push(`/item/${slug}`);
+            const workId: number | undefined = json?.workId ? Number(json.workId) : undefined;
+            if (workId) router.push(`/work/${workId}`);
+            else {
+              const slug: string | undefined = json?.item?.slug;
+              if (slug) router.push(`/item/${slug}`);
+            }
           },
         }));
         const mappedLists: Result[] = (local?.lists || []).map((l: any) => ({
