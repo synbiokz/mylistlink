@@ -1,30 +1,48 @@
-import { ReactionBar } from "@/components/domain/ReactionBar";
-import { OverlapPanel } from "@/components/domain/OverlapPanel";
-import { TrailChips } from "@/components/domain/TrailChips";
-import { getBySlug } from "@/data/lists";
-import { overlapsForList } from "@/data/overlaps";
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ReactionBar } from "@/components/domain/ReactionBar";
+import { TrailChips } from "@/components/domain/TrailChips";
+import { getListPageData } from "@/data/discovery";
 
-export default async function ListPage({ params }: { params: { slug: string } }) {
-  const list = await getBySlug(params.slug);
-  if (!list) return notFound();
-  const overlaps = await overlapsForList(list.id, 6);
+export const dynamic = "force-dynamic";
+
+export default async function ListPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const data = await getListPageData(slug);
+  if (!data) return notFound();
+
   return (
     <div className="space-y-8">
-      <header className="space-y-2">
-        <h1 className="display">{list.title}</h1>
-        <p className="muted">By {list.owner?.name ?? "@user"} {list.publishedAt ? `• ${new Date(list.publishedAt).toDateString()}` : ""}</p>
-        <ReactionBar />
+      <header className="space-y-3">
+        <div className="eyebrow">Public list</div>
+        <h1 className="display">{data.list.title}</h1>
+        <p className="muted">
+          By <Link href={`/user/${data.list.owner.handle}`} className="hover:underline">@{data.list.owner.handle}</Link>
+          {data.list.publishedAt ? ` / ${new Date(data.list.publishedAt).toDateString()}` : ""}
+        </p>
+        {data.list.description ? <p className="max-w-3xl text-base leading-7 muted">{data.list.description}</p> : null}
+        <ReactionBar
+          listId={data.list.id}
+          shareUrl={`/list/${data.list.slug}`}
+          initial={{
+            likesCount: data.reactions?.likesCount ?? data.list.likesCount,
+            savesCount: data.reactions?.savesCount ?? data.list.savesCount,
+            liked: data.reactions?.liked,
+            saved: data.reactions?.saved,
+          }}
+        />
       </header>
 
       <section className="space-y-3">
-        <ol className="space-y-2">
-          {list.items.map((li, i) => (
-            <li key={li.itemId} className="flex items-start gap-3">
-              <div className="font-mono text-sm mt-1">{i + 1}.</div>
-              <div className="flex-1 surface p-3">
-                {li.item.title ?? li.item.url ?? "Untitled"}
-              </div>
+        <h2 className="h2">The seven books</h2>
+        <ol className="space-y-3">
+          {data.list.items.map((item, index) => (
+            <li key={item.bookId} className="flex items-start gap-3">
+              <div className="mt-1 font-mono text-sm">{index + 1}.</div>
+              <Link href={`/book/${item.book.slug}`} className="surface flex-1 p-4 transition hover:-translate-y-0.5">
+                <div className="font-semibold">{item.book.canonicalTitle}</div>
+                <div className="text-sm muted">{item.book.author.name}</div>
+              </Link>
             </li>
           ))}
         </ol>
@@ -32,19 +50,26 @@ export default async function ListPage({ params }: { params: { slug: string } })
 
       <section className="space-y-3">
         <h2 className="h2">Follow the trail</h2>
-        <TrailChips />
+        <TrailChips items={data.trails.map((trail) => ({ href: trail.href, label: trail.label, count: trail.count }))} />
       </section>
 
       <section className="space-y-3">
-        <h3 className="h2">Overlaps</h3>
+        <h2 className="h2">Overlap matches</h2>
         <div className="grid grid-cols-1 gap-4">
-          {overlaps.length === 0 ? (
-            <div className="muted text-sm">No overlaps yet.</div>
+          {data.overlaps.length === 0 ? (
+            <div className="text-sm muted">No overlap matches yet.</div>
           ) : (
-            overlaps.map((o) => (
-              <div key={o.list.id} className="surface p-4 flex items-center justify-between">
-                <div className="truncate">{o.list.title}</div>
-                <div className="text-xs bg-[rgb(var(--color-accent))] px-2 py-1 rounded-md">{o.overlap}/7</div>
+            data.overlaps.map((overlap) => (
+              <div key={overlap.list.id} className="surface flex items-center justify-between gap-4 p-4">
+                <div>
+                  <Link href={`/list/${overlap.list.slug}`} className="font-semibold hover:underline">
+                    {overlap.list.title}
+                  </Link>
+                  <div className="text-sm muted">@{overlap.list.owner.handle}</div>
+                </div>
+                <div className="rounded-full bg-[rgb(var(--color-accent))] px-3 py-1 text-xs">
+                  {overlap.overlap}/7 shared
+                </div>
               </div>
             ))
           )}

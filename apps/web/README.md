@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ListLink Books
 
-## Getting Started
+Book-only MVP for expressive 7-book lists and overlap-based discovery.
 
-First, run the development server:
+## Product scope
+
+- Public lists of exactly 7 books
+- Canonical book pages sourced from Open Library
+- Overlap discovery between published lists
+- Lightweight social actions: likes and saves
+
+## Stack
+
+- Next.js App Router
+- TypeScript
+- Tailwind CSS
+- Prisma
+- PostgreSQL
+- NextAuth credentials login for local MVP auth
+
+## Local setup
+
+1. In `apps/web`, copy `.env.example` to `.env.local` and `.env`.
+2. Point `DATABASE_URL` at a local PostgreSQL database.
+3. Generate the Prisma client:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm db:generate:web
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+4. Push the schema:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+pnpm db:push:web
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+5. Start the app:
 
-## Learn More
+```bash
+pnpm dev:web
+```
 
-To learn more about Next.js, take a look at the following resources:
+6. Validate the workspace-scoped checks:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+pnpm lint:web
+pnpm typecheck:web
+pnpm build:web
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Architecture notes
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- One Prisma schema in `apps/web/prisma/schema.prisma`
+- Canonical domain models: `User`, `Author`, `Book`, `List`, `ListItem`
+- External ingestion is limited to Open Library search and local canonicalization
+- Book/list/profile/discover routes are the only product surfaces
+- Follow UI, moderation, and analytics are intentionally deferred in this MVP

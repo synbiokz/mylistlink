@@ -4,37 +4,61 @@ import { Avatar } from "@/components/ui/Avatar";
 
 export function ListCard({
   title = "Untitled List",
-  owner = { name: "someone", avatarUrl: null as string | null, handle: "user" },
+  owner = { name: "reader", avatarUrl: null as string | null, handle: "user" },
   href = "#",
-  overlap = 0,
+  description = null,
+  overlap,
+  publishedLabel,
+  previewItems = [],
+  metrics,
 }: {
   title?: string;
   owner?: { name: string; avatarUrl: string | null; handle: string };
   href?: string;
+  description?: string | null;
   overlap?: number;
+  publishedLabel?: string;
+  previewItems?: Array<{ label: string; href: string }>;
+  metrics?: { likes: number; saves: number };
 }) {
   return (
-    <Card>
+    <Card className="h-full">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <Link href={href} className="font-semibold hover:underline line-clamp-2">
+          <div className="mb-2 text-[11px] uppercase tracking-[0.22em] text-[rgb(var(--color-muted))]">
+            {publishedLabel ?? "Published list"}
+          </div>
+          <Link href={href} className="line-clamp-2 text-lg font-semibold leading-6 hover:underline">
             {title}
           </Link>
-          <div className="mt-2 space-y-1 text-sm">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-4 skel" />
-            ))}
+          {description ? <p className="mt-2 line-clamp-2 text-sm muted">{description}</p> : null}
+        </div>
+        {typeof overlap === "number" ? (
+          <div className="rounded-full bg-[rgb(var(--color-accent))] px-3 py-1 text-xs whitespace-nowrap">
+            {overlap}/7 overlap
           </div>
-        </div>
-        <div className="text-xs bg-[rgb(var(--color-accent))] px-2 py-1 rounded-md whitespace-nowrap">
-          {overlap}/7
-        </div>
+        ) : null}
       </div>
-      <div className="mt-4 flex items-center gap-2 text-sm muted">
-        <Avatar size={20} alt={owner.name} src={owner.avatarUrl} />
-        <span className="truncate">@{owner.handle}</span>
+      {previewItems.length > 0 ? (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {previewItems.slice(0, 3).map((item) => (
+            <Link
+              key={`${item.href}:${item.label}`}
+              href={item.href}
+              className="rounded-full bg-[rgb(var(--color-accent))] px-3 py-1 text-xs transition hover:bg-[rgb(var(--color-border))]"
+            >
+              {item.label}
+            </Link>
+          ))}
+        </div>
+      ) : null}
+      <div className="mt-5 flex items-center justify-between gap-3 text-sm muted">
+        <Link href={`/user/${owner.handle}`} className="flex min-w-0 items-center gap-2 hover:text-[rgb(var(--color-fg))]">
+          <Avatar size={24} alt={owner.name} src={owner.avatarUrl} />
+          <span className="truncate">@{owner.handle}</span>
+        </Link>
+        {metrics ? <span>{metrics.likes} likes / {metrics.saves} saves</span> : null}
       </div>
     </Card>
   );
 }
-

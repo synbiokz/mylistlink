@@ -1,21 +1,10 @@
-export type ExternalSource = "openlibrary" | "omdb" | "wikidata";
-
-export type ExternalItem = {
-  source: ExternalSource;
+export type ExternalBook = {
+  source: "openlibrary";
   sourceId: string;
   title: string;
-  type?: string;
-  imageUrl?: string | null;
-  creator?: string | null;
-  year?: number | null;
-  summary?: string | null;
+  authorName?: string | null;
+  coverUrl?: string | null;
+  publicationYear?: number | null;
+  genrePrimary?: string | null;
   url?: string | null;
-};
-
-export type SearchType = "book" | "movie" | "series" | "episode" | "entity" | "all";
-
-export type SearchOptions = {
-  type?: SearchType;
-  limit?: number;
-  year?: number;
 };

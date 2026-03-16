@@ -25,3 +25,16 @@ prisma/*.sqlite
 # OS artifacts
 .DS_Store
 Thumbs.db
+
+# Local temp and scratch files
+*.tmp
+*.log
+tmp-*
+.tmp-*
+**/.tmp-*
+
+# Local note / transfer folders
+listlink-startup/
+listlink-transfer/
+listlink-shutdown/
+doc.txt

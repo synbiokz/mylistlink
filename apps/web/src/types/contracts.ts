@@ -1,32 +1,33 @@
 import { z } from "zod";
 
-// External search item (from /api/sources/search)
-export const SearchItemSchema = z.object({
-  source: z.string(),
+export const BookSearchResultSchema = z.object({
+  source: z.literal("openlibrary"),
   sourceId: z.string(),
   title: z.string(),
-  type: z.string().optional(),
-  imageUrl: z.string().nullable().optional(),
+  authorName: z.string().nullable().optional(),
+  coverUrl: z.string().nullable().optional(),
+  publicationYear: z.number().int().nullable().optional(),
+  genrePrimary: z.string().nullable().optional(),
   url: z.string().nullable().optional(),
 });
-export type SearchItem = z.infer<typeof SearchItemSchema>;
+export type BookSearchResult = z.infer<typeof BookSearchResultSchema>;
 
-// Local Item
-export const ItemSchema = z.object({
+export const BookSchema = z.object({
   id: z.number().int(),
   slug: z.string(),
-  title: z.string().nullable().optional(),
-  url: z.string().nullable().optional(),
+  canonicalTitle: z.string(),
+  authorName: z.string(),
+  coverUrl: z.string().nullable().optional(),
 });
-export type Item = z.infer<typeof ItemSchema>;
+export type Book = z.infer<typeof BookSchema>;
 
-// Slot snapshot returned by authoring endpoints
 export const SlotSchema = z.object({
   position: z.number().int(),
-  itemId: z.number().int().nullable(),
+  bookId: z.number().int().nullable(),
   title: z.string().nullable(),
   slug: z.string().nullable(),
-  url: z.string().nullable(),
+  authorName: z.string().nullable(),
+  coverUrl: z.string().nullable(),
 });
 export type Slot = z.infer<typeof SlotSchema>;
 
@@ -39,30 +40,13 @@ export const DraftSchema = z.object({
 });
 export type Draft = z.infer<typeof DraftSchema>;
 
-export const ListSummarySchema = z.object({
-  id: z.number().int(),
-  slug: z.string(),
-  title: z.string(),
-});
-export type ListSummary = z.infer<typeof ListSummarySchema>;
-
-export const OverlapSchema = z.object({
-  list: ListSummarySchema,
-  overlap: z.number().int(),
-  similarity: z.number(),
-});
-export type Overlap = z.infer<typeof OverlapSchema>;
-
-// Auth session (subset used in UI)
 export const SessionSchema = z.object({
   user: z.object({ id: z.number().int(), email: z.string().nullable(), name: z.string().nullable() }),
 });
 export type Session = z.infer<typeof SessionSchema>;
 
-// Response wrappers
-export const SlotsResponseSchema = z.object({ slots: z.array(SlotSchema) });
-export const CreateDraftResponseSchema = z.object({ list: z.object({ id: z.number().int(), slug: z.string() }) });
+export const SlotSnapshotResponseSchema = z.object({ slots: z.array(SlotSchema) });
+export const DraftCreateResponseSchema = z.object({ list: z.object({ id: z.number().int(), slug: z.string() }) });
 export const LatestDraftResponseSchema = z.object({ draft: DraftSchema.nullable() });
-export const ResolveItemResponseSchema = z.object({ itemId: z.number().int(), slug: z.string().optional(), item: ItemSchema.optional() });
-export const SearchResponseSchema = z.object({ q: z.string(), items: z.array(SearchItemSchema) });
-
+export const BookResolveResponseSchema = z.object({ bookId: z.number().int(), slug: z.string(), book: BookSchema.optional() });
+export const BookSearchResponseSchema = z.object({ q: z.string(), books: z.array(BookSearchResultSchema) });

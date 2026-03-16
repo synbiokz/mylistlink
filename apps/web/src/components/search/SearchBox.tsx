@@ -1,57 +1,50 @@
-// Path: apps/web/src/components/search/SearchBox.tsx
-// NOTE: Typeahead wired to federated external search with keyboard focus shortcut (/).
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Input } from "@/components/ui/Input";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Input } from "@/components/ui/Input";
 
-type ExternalItem = {
-  source: "openlibrary" | "omdb" | "wikidata";
-  sourceId: string;
-  title: string;
-  type?: string;
-  imageUrl?: string | null;
-  url?: string | null;
+type Result = {
+  key: string;
+  label: string;
+  subtitle?: string;
+  href: string;
 };
 
-type Result = { key: string; label: string; subtitle?: string; onSelect: () => void };
+type SuggestData = {
+  recentLists: Array<{ title: string; slug: string }>;
+  topUsers: Array<{ handle: string; name?: string | null }>;
+  hotBooks: Array<{ slug: string; title: string }>;
+};
 
 export function SearchBox() {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [results, setResults] = useState<Result[]>([]);
-  const [suggest, setSuggest] = useState<{ lists: Array<{ title: string; slug: string }>; users: Array<{ handle: string; name?: string | null }>; items: Array<{ id: number; title?: string | null }> } | null>(null);
+  const [suggest, setSuggest] = useState<SuggestData | null>(null);
   const boxRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const debouncedQ = useDebounce(q, 250);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "/" && (e.target as HTMLElement)?.tagName !== "INPUT") {
         e.preventDefault();
-        (boxRef.current?.querySelector("input") as HTMLInputElement)?.focus();
+        (boxRef.current?.querySelector("input") as HTMLInputElement | null)?.focus();
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  // Debounced query
-  const debouncedQ = useDebounce(q, 350);
-
   useEffect(() => {
-    // Load suggestions for empty query on first focus
     if (!open || q.trim()) return;
     let cancelled = false;
     (async () => {
       try {
-        const r = await fetch(`/api/suggest`);
-        const d = await r.json();
-        if (cancelled) return;
-        const lists = (d?.recentLists || []).map((l: any) => ({ title: l.title as string, slug: l.slug as string }));
-        const users = (d?.topUsers || []).map((u: any) => ({ handle: u.handle as string, name: (u.name as string) ?? null }));
-        const items = (d?.hotItems || []).map((i: any) => ({ id: Number(i.id), title: (i.title as string) ?? null }));
-        setSuggest({ lists, users, items });
+        const res = await fetch("/api/suggest");
+        const data = (await res.json()) as SuggestData;
+        if (!cancelled) setSuggest(data);
       } catch {
         if (!cancelled) setSuggest(null);
       }
@@ -63,140 +56,140 @@ export function SearchBox() {
 
   useEffect(() => {
     let cancelled = false;
-    async function run() {
+    (async () => {
       const query = debouncedQ.trim();
-      if (!query || query.length < 2) {
+      if (query.length < 2) {
         setResults([]);
-        setOpen(!!suggest);
         return;
       }
+
       try {
-        const [extRes, localRes] = await Promise.all([
-          fetch(`/api/sources/search?q=${encodeURIComponent(query)}`),
-          fetch(`/api/search?q=${encodeURIComponent(query)}`),
-        ]);
-        const data = await extRes.json();
-        const local = await localRes.json();
-        const items: ExternalItem[] = data?.items ?? [];
-        const mappedExt: Result[] = items.slice(0, 8).map((it) => ({
-          key: `${it.source}:${it.sourceId}`,
-          label: it.title,
-          subtitle: prettySource(it),
-          onSelect: async () => {
-            // Resolve to local Item and navigate to item hub
-            const r = await fetch(`/api/items/resolve`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(it),
-            });
-            const json = await r.json();
-            const workId: number | undefined = json?.workId ? Number(json.workId) : undefined;
-            if (workId) router.push(`/work/${workId}`);
-            else {
-              const slug: string | undefined = json?.item?.slug;
-              if (slug) router.push(`/item/${slug}`);
-            }
-          },
-        }));
-        const mappedLists: Result[] = (local?.lists || []).map((l: any) => ({
-          key: `list:${l.slug}`,
-          label: l.title,
-          subtitle: "list",
-          onSelect: () => router.push(`/list/${l.slug}`),
-        }));
-        const mappedUsers: Result[] = (local?.users || []).map((u: any) => ({
-          key: `user:${u.handle}`,
-          label: u.name ?? u.handle,
-          subtitle: `@${u.handle}`,
-          onSelect: () => router.push(`/user/${u.handle}`),
-        }));
-        if (!cancelled) {
-          setResults([...mappedUsers.slice(0, 3), ...mappedLists.slice(0, 5), ...mappedExt]);
-          setOpen(true);
-        }
+        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        if (cancelled) return;
+
+        const next: Result[] = [
+          ...(data.users || []).map((user: { handle: string; name?: string | null }) => ({
+            key: `user:${user.handle}`,
+            label: user.name ?? user.handle,
+            subtitle: `@${user.handle}`,
+            href: `/user/${user.handle}`,
+          })),
+          ...(data.lists || []).map((list: { slug: string; title: string }) => ({
+            key: `list:${list.slug}`,
+            label: list.title,
+            subtitle: "list",
+            href: `/list/${list.slug}`,
+          })),
+          ...(data.books || []).map((book: { slug: string; canonicalTitle: string; author: { name: string } }) => ({
+            key: `book:${book.slug}`,
+            label: book.canonicalTitle,
+            subtitle: book.author.name,
+            href: `/book/${book.slug}`,
+          })),
+        ];
+
+        setResults(next.slice(0, 10));
       } catch {
-        if (!cancelled) {
-          setResults([]);
-          setOpen(!!suggest);
-        }
+        if (!cancelled) setResults([]);
       }
-    }
-    run();
+    })();
+
     return () => {
       cancelled = true;
     };
-  }, [debouncedQ, router, suggest]);
+  }, [debouncedQ]);
 
   return (
     <div className="relative" ref={boxRef}>
       <Input
-        placeholder="Search items and lists...  (press / to focus)"
+        placeholder="Search books, lists, and readers... (/)"
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        onFocus={() => q && setOpen(true)}
+        onFocus={() => setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 100)}
         aria-label="Search"
       />
-      {open && (
+      {open ? (
         <div className="absolute z-50 mt-2 w-full surface p-2">
           {q.trim().length < 2 && suggest ? (
-            <div>
-              <div className="mb-2 text-xs muted">Suggestions</div>
-              <div className="flex flex-wrap gap-2">
-                {(suggest.items || []).map((it, i) => (
-                  <button key={`it-${i}`} className="px-2 py-1 rounded-md bg-[rgb(var(--color-accent))] text-sm" onMouseDown={(e) => e.preventDefault()} onClick={() => router.push(`/work/${it.id}`)}>
-                    {it.title ?? "Work"}
-                  </button>
-                ))}
-                {(suggest.lists || []).map((l, i) => (
-                  <button key={`l-${i}`} className="px-2 py-1 rounded-md bg-[rgb(var(--color-accent))] text-sm" onMouseDown={(e) => e.preventDefault()} onClick={() => router.push(`/list/${l.slug}`)}>
-                    {l.title}
-                  </button>
-                ))}
-                {(suggest.users || []).map((u, i) => (
-                  <button key={`u-${i}`} className="px-2 py-1 rounded-md bg-[rgb(var(--color-accent))] text-sm" onMouseDown={(e) => e.preventDefault()} onClick={() => router.push(`/user/${u.handle}`)}>
-                    @{u.handle}
-                  </button>
-                ))}
-              </div>
+            <div className="space-y-3">
+              <SuggestionRow
+                label="Hot books"
+                items={(suggest.hotBooks || []).map((book) => ({ key: `book:${book.slug}`, label: book.title, href: `/book/${book.slug}` }))}
+                onSelect={(href) => router.push(href)}
+              />
+              <SuggestionRow
+                label="Recent lists"
+                items={(suggest.recentLists || []).map((list) => ({ key: `list:${list.slug}`, label: list.title, href: `/list/${list.slug}` }))}
+                onSelect={(href) => router.push(href)}
+              />
+              <SuggestionRow
+                label="Readers"
+                items={(suggest.topUsers || []).map((user) => ({ key: `user:${user.handle}`, label: `@${user.handle}`, href: `/user/${user.handle}` }))}
+                onSelect={(href) => router.push(href)}
+              />
             </div>
           ) : results.length === 0 ? (
-            <div className="text-sm muted px-2 py-1">No results</div>
+            <div className="px-2 py-1 text-sm muted">No results</div>
           ) : (
             <ul className="text-sm">
-              {results.map((r) => (
+              {results.map((result) => (
                 <li
-                  key={r.key}
-                  className="px-2 py-1 rounded-md hover:bg-[rgb(var(--color-accent))] cursor-pointer"
+                  key={result.key}
+                  className="cursor-pointer rounded-md px-2 py-1 hover:bg-[rgb(var(--color-accent))]"
                   onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => r.onSelect()}
+                  onClick={() => router.push(result.href)}
                 >
-                  <div className="flex items-center justify-between">
-                    <span>{r.label}</span>
-                    {r.subtitle && <span className="muted text-xs">{r.subtitle}</span>}
+                  <div className="flex items-center justify-between gap-3">
+                    <span>{result.label}</span>
+                    {result.subtitle ? <span className="text-xs muted">{result.subtitle}</span> : null}
                   </div>
                 </li>
               ))}
             </ul>
           )}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
 
-function prettySource(i: ExternalItem) {
-  if (i.source === "omdb") return i.type ? `${i.type}` : "movie";
-  if (i.source === "openlibrary") return "book";
-  if (i.source === "wikidata") return i.type || "entity";
-  return i.source;
+function SuggestionRow({
+  label,
+  items,
+  onSelect,
+}: {
+  label: string;
+  items: Array<{ key: string; label: string; href: string }>;
+  onSelect: (href: string) => void;
+}) {
+  if (items.length === 0) return null;
+
+  return (
+    <div>
+      <div className="mb-2 text-xs muted">{label}</div>
+      <div className="flex flex-wrap gap-2">
+        {items.map((item) => (
+          <button
+            key={item.key}
+            className="rounded-md bg-[rgb(var(--color-accent))] px-2 py-1 text-sm"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => onSelect(item.href)}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 }
 
-function useDebounce<T>(value: T, delay = 200) {
-  const [v, setV] = useState(value);
+function useDebounce<T>(value: T, delay = 250) {
+  const [next, setNext] = useState(value);
   useEffect(() => {
-    const t = setTimeout(() => setV(value), delay);
-    return () => clearTimeout(t);
+    const timeout = window.setTimeout(() => setNext(value), delay);
+    return () => window.clearTimeout(timeout);
   }, [value, delay]);
-  return v;
+  return next;
 }

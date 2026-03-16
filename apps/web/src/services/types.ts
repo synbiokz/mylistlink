@@ -1,4 +1,4 @@
-import type { Draft, SearchItem, Slot } from "@/types/contracts";
+import type { BookSearchResult, Draft, Slot } from "@/types/contracts";
 import type { ApiError } from "@/types/errors";
 
 export type SlotsResult = { slots: Slot[]; error?: ApiError };
@@ -6,18 +6,14 @@ export type SlotsResult = { slots: Slot[]; error?: ApiError };
 export interface ListsService {
   createDraft(input: { title: string; description?: string | null }): Promise<{ id: number; slug: string }>;
   getLatestDraft(): Promise<Draft | null>;
-  setSlot(listId: number, itemId: number, position: number, opts?: { clientRequestId?: string }): Promise<SlotsResult>;
+  setSlot(listId: number, bookId: number, position: number, opts?: { clientRequestId?: string }): Promise<SlotsResult>;
   removeSlot(listId: number, position: number): Promise<SlotsResult>;
   publish(listId: number): Promise<void>;
 }
 
-export interface ItemsService {
-  resolve(item: SearchItem): Promise<{ itemId: number; slug?: string }>;
-}
-
-export interface SearchService {
-  search(q: string, opts?: { type?: string; limit?: number }): Promise<SearchItem[]>;
-  searchGrouped(q: string, opts?: { type?: string; limit?: number; expand?: boolean }): Promise<any>;
+export interface BooksService {
+  search(q: string, opts?: { limit?: number }): Promise<BookSearchResult[]>;
+  resolve(candidate: BookSearchResult): Promise<{ bookId: number; slug: string }>;
 }
 
 export interface AuthService {
@@ -36,8 +32,7 @@ export interface UsersService {
 
 export interface Services {
   lists: ListsService;
-  items: ItemsService;
-  search: SearchService;
+  books: BooksService;
   auth: AuthService;
   users?: UsersService;
 }

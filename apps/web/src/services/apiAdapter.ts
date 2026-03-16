@@ -1,33 +1,31 @@
 import { z } from "zod";
 import {
-  CreateDraftResponseSchema,
+  BookResolveResponseSchema,
+  BookSearchResponseSchema,
+  BookSearchResultSchema,
+  DraftCreateResponseSchema,
   LatestDraftResponseSchema,
-  ResolveItemResponseSchema,
-  SearchItemSchema,
-  SearchResponseSchema,
   SessionSchema,
-  SlotsResponseSchema,
+  SlotSnapshotResponseSchema,
   type Draft,
-  type SearchItem,
   type Slot,
 } from "@/types/contracts";
 import type { ApiError } from "@/types/errors";
-import type { AuthService, ItemsService, ListsService, SearchService, Services, UsersService } from "./types";
-import type { GroupedSearchResponse } from "@/types/search-grouped";
+import type { AuthService, BooksService, ListsService, Services, UsersService } from "./types";
 
 async function parseJson<T extends z.ZodTypeAny>(res: Response, schema: T) {
   const data = await res.json().catch(() => ({}));
   const parsed = schema.safeParse(data);
   if (!parsed.success) {
-    throw { code: "UNKNOWN", message: "Invalid response", issues: parsed.error } as any;
+    throw { code: "UNKNOWN", message: "Invalid response", issues: parsed.error };
   }
   return parsed.data as z.infer<T>;
 }
 
-function parseError(res: Response, body: any): ApiError {
-  const code = body?.error?.code || (res.status === 401 ? "AUTH_UNAUTHORIZED" : res.status === 403 ? "AUTH_FORBIDDEN" : res.status === 404 ? "NOT_FOUND" : res.status === 409 ? "CONFLICT_POSITION" : res.status === 429 ? "RATE_LIMIT" : "UNKNOWN");
-  const message = body?.error?.message;
-  return { code, message };
+function parseError(res: Response, body: unknown): ApiError {
+  const error = typeof body === "object" && body !== null && "error" in body ? (body as { error?: { code?: string; message?: string } }).error : undefined;
+  const code = error?.code || (res.status === 401 ? "AUTH_UNAUTHORIZED" : res.status === 403 ? "AUTH_FORBIDDEN" : res.status === 404 ? "NOT_FOUND" : res.status === 409 ? "CONFLICT_POSITION" : "UNKNOWN");
+  return { code: code as ApiError["code"], message: error?.message };
 }
 
 const lists: ListsService = {
@@ -38,7 +36,7 @@ const lists: ListsService = {
       body: JSON.stringify({ title: input.title, description: input.description ?? null }),
     });
     if (!res.ok) throw parseError(res, await res.json().catch(() => null));
-    const data = await parseJson(res, CreateDraftResponseSchema);
+    const data = await parseJson(res, DraftCreateResponseSchema);
     return { id: data.list.id, slug: data.list.slug };
   },
   async getLatestDraft(): Promise<Draft | null> {
@@ -50,23 +48,24 @@ const lists: ListsService = {
     const data = await parseJson(res, LatestDraftResponseSchema);
     return data.draft ?? null;
   },
-  async setSlot(listId, itemId, position, opts) {
-    const res = await fetch(`/api/lists/${listId}/items/set`, {
+  async setSlot(listId, bookId, position, opts) {
+    const res = await fetch(`/api/lists/${listId}/slots/set`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ itemId, position, clientRequestId: opts?.clientRequestId }),
+      body: JSON.stringify({ bookId, position, clientRequestId: opts?.clientRequestId }),
     });
     const body = await res.json().catch(() => ({}));
-    const slots = SlotsResponseSchema.safeParse(body).success ? (body as { slots: Slot[] }).slots : [];
+    const parsed = SlotSnapshotResponseSchema.safeParse(body);
+    const slots = parsed.success ? parsed.data.slots : ([] as Slot[]);
     if (!res.ok) return { slots, error: parseError(res, body) };
     return { slots };
   },
   async removeSlot(listId, position) {
-    const res = await fetch(`/api/lists/${listId}/items?position=${position}`, { method: "DELETE" });
+    const res = await fetch(`/api/lists/${listId}/slots?position=${position}`, { method: "DELETE" });
     const body = await res.json().catch(() => ({}));
-    if (!res.ok) return { slots: [], error: parseError(res, body) };
-    const data = SlotsResponseSchema.safeParse(body);
-    return { slots: data.success ? data.data.slots : [] };
+    const parsed = SlotSnapshotResponseSchema.safeParse(body);
+    if (!res.ok) return { slots: parsed.success ? parsed.data.slots : [], error: parseError(res, body) };
+    return { slots: parsed.success ? parsed.data.slots : [] };
   },
   async publish(listId) {
     const res = await fetch(`/api/lists/${listId}/publish`, { method: "POST" });
@@ -74,46 +73,31 @@ const lists: ListsService = {
   },
 };
 
-const items: ItemsService = {
-  async resolve(item: SearchItem) {
-    const res = await fetch("/api/items/resolve", {
+const books: BooksService = {
+  async search(q, opts) {
+    const params = new URLSearchParams({ q });
+    if (opts?.limit) params.set("limit", String(opts.limit));
+    const res = await fetch(`/api/books/search?${params.toString()}`);
+    if (!res.ok) throw parseError(res, await res.json().catch(() => null));
+    const data = await parseJson(res, BookSearchResponseSchema);
+    return data.books.map((book) => BookSearchResultSchema.parse(book));
+  },
+  async resolve(book) {
+    const res = await fetch("/api/books/resolve", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(item),
+      body: JSON.stringify(book),
     });
     if (!res.ok) throw parseError(res, await res.json().catch(() => null));
-    const data = await parseJson(res, ResolveItemResponseSchema);
-    return { itemId: data.itemId, slug: data.slug };
-  },
-};
-
-const search: SearchService = {
-  async search(q: string, opts) {
-    const params = new URLSearchParams({ q });
-    if (opts?.type) params.set("type", opts.type);
-    if (opts?.limit) params.set("limit", String(opts.limit));
-    const res = await fetch(`/api/sources/search?${params.toString()}`);
-    if (!res.ok) throw parseError(res, await res.json().catch(() => null));
-    const data = await parseJson(res, SearchResponseSchema);
-    // Validate each item, tolerate partials by filtering invalid
-    return (data.items || []).map((it: unknown) => SearchItemSchema.safeParse(it)).filter((r) => r.success).map((r) => r.data);
-  },
-  async searchGrouped(q: string, opts) {
-    const params = new URLSearchParams({ q });
-    if (opts?.type) params.set("type", opts.type);
-    if (opts?.limit) params.set("limit", String(opts.limit));
-    if (opts?.expand) params.set("expand", opts.expand ? "1" : "0");
-    const res = await fetch(`/api/search/grouped?${params.toString()}`);
-    if (!res.ok) throw parseError(res, await res.json().catch(() => null));
-    const data: GroupedSearchResponse = await res.json();
-    return data.items;
+    const data = await parseJson(res, BookResolveResponseSchema);
+    return { bookId: data.bookId, slug: data.slug };
   },
 };
 
 const auth: AuthService = {
   async getSession() {
     const res = await fetch("/api/auth/session");
-    if (res.status === 204) return null; // next-auth may return empty
+    if (res.status === 204) return null;
     const data = await res.json().catch(() => null);
     if (!res.ok || !data) return null;
     const parsed = SessionSchema.safeParse(data);
@@ -121,18 +105,14 @@ const auth: AuthService = {
     return parsed.data;
   },
   async signIn(input) {
-    const { provider, email, name, callbackUrl, redirect } = input;
-    // Use dynamic import so this module remains isomorphic; only resolves on client.
     const mod = await import("next-auth/react");
-    const res: any = await mod.signIn(provider, {
-      email,
-      name,
-      redirect: redirect !== false, // default true
-      callbackUrl: callbackUrl ?? "/create",
+    const res = await mod.signIn(input.provider, {
+      email: input.email,
+      name: input.name,
+      redirect: input.redirect !== false,
+      callbackUrl: input.callbackUrl ?? "/create",
     });
-    // NextAuth returns { ok?: boolean, error?: string | null, url?: string }
-    const ok = !!(res?.ok || res?.url);
-    return { ok, url: res?.url ?? null, error: res?.error ?? null };
+    return { ok: !!(res?.ok || res?.url), url: res?.url ?? null, error: res?.error ?? null };
   },
   async signOut(input) {
     const mod = await import("next-auth/react");
@@ -146,9 +126,15 @@ const users: UsersService = {
     if (res.status === 401) return null;
     const body = await res.json().catch(() => null);
     if (!res.ok || !body?.user) return null;
-    const u = body.user as any;
-    return { id: Number(u.id), handle: String(u.handle), email: u.email ?? null, name: u.name ?? null, avatarUrl: u.avatarUrl ?? null };
+    const user = body.user as { id: number; handle: string; email: string | null; name: string | null; avatarUrl: string | null };
+    return {
+      id: Number(user.id),
+      handle: String(user.handle),
+      email: user.email ?? null,
+      name: user.name ?? null,
+      avatarUrl: user.avatarUrl ?? null,
+    };
   },
 };
 
-export const apiAdapter: Services = { lists, items, search, auth, users };
+export const apiAdapter: Services = { lists, books, auth, users };

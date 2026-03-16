@@ -1,9 +1,0 @@
-Write a thorough summary of this session's work. Append it to "running-summary.md" in the directory listlink-startup. Subscribe to the markdown format. Add the date to the header you create. Take a step back to: consider our work in the context of today's dev direction, our current codebase, the contents of everything you've reviewed for the project, including the doc "startup.txt". 
-
-Write in a way that is optimal for Codex CLI to gain full technical and contextual understanding, with human-level understanding being of minor importance.
-
-Include:
--A chronological list of technical successes. It needs to explain technically exactly where we are
--The high-level overview of today's work, thematically and by its successes
--The technical challenges faced and the ones solved and oustanding. Place these where they optimally should be in the summary.
--Write a technically scoped primer for the suggested steps to start a new session.

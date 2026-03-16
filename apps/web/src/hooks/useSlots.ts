@@ -7,9 +7,9 @@ import type { ApiError } from "@/types/errors";
 
 export function useSetSlot(listId: number) {
   const qc = useQueryClient();
-  return useMutation<{ slots: Slot[]; error?: ApiError }, unknown, { itemId: number; position: number; clientRequestId?: string }>(
+  return useMutation<{ slots: Slot[]; error?: ApiError }, unknown, { bookId: number; position: number; clientRequestId?: string }>(
     {
-      mutationFn: async (vars) => getServices().lists.setSlot(listId, vars.itemId, vars.position, { clientRequestId: vars.clientRequestId }),
+      mutationFn: async (vars) => getServices().lists.setSlot(listId, vars.bookId, vars.position, { clientRequestId: vars.clientRequestId }),
       onSuccess: () => {
         qc.invalidateQueries({ queryKey: ["draft", "latest"] });
       },
@@ -34,4 +34,3 @@ export function usePublishList(listId: number) {
     mutationFn: async () => getServices().lists.publish(listId),
   });
 }
-

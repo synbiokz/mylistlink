@@ -5,7 +5,7 @@ export type ApiErrorCode =
   | "AUTH_FORBIDDEN"
   | "NOT_FOUND"
   | "CONFLICT_POSITION"
-  | "DUPLICATE_ITEM"
+  | "DUPLICATE_BOOK"
   | "RATE_LIMIT"
   | "UNKNOWN";
 
@@ -29,12 +29,11 @@ export function friendlyMessage(err: ApiError | undefined): string {
       return "Not found.";
     case "CONFLICT_POSITION":
       return "That spot changed. Your list was refreshed.";
-    case "DUPLICATE_ITEM":
-      return "That item is already on your list.";
+    case "DUPLICATE_BOOK":
+      return "That book is already on your list.";
     case "RATE_LIMIT":
       return "You're doing that too quickly. Please wait a moment.";
     default:
       return err.message || "Unexpected error.";
   }
 }
-

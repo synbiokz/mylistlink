@@ -16,9 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MyListLink — Build lists of 7. Discover via overlaps.",
-  description:
-    "Create themed lists of 7 items. Explore overlaps across the community and follow trails of discovery.",
+  title: "ListLink Books",
+  description: "Create themed 7-book lists and discover other readers through shared-book overlap.",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 

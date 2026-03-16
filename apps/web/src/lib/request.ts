@@ -1,9 +1,7 @@
 import { randomUUID } from "crypto";
 
 export function getRequestId(req: Request): string {
-  // Headers may be Node/edge compatible; use generic accessor
-  const h = (req.headers as any)?.get?.("x-request-id");
-  return h || randomUUID();
+  return req.headers.get("x-request-id") || randomUUID();
 }
 
 export function withRequestId(resp: Response, requestId: string) {
@@ -11,8 +9,7 @@ export function withRequestId(resp: Response, requestId: string) {
   return resp;
 }
 
-export function json(data: any, init?: ResponseInit) {
+export function json(data: unknown, init?: ResponseInit) {
   const body = JSON.stringify(data);
   return new Response(body, { ...(init || {}), headers: { "content-type": "application/json", ...(init?.headers || {}) } });
 }
-

@@ -1,5 +1,5 @@
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -10,46 +10,52 @@ generator client {
 enum ListStatus {
   DRAFT
   PUBLISHED
-  ARCHIVED
-}
-
-enum Visibility {
-  PUBLIC
-  UNLISTED
-  PRIVATE
-}
-
-enum ItemKind {
-  TEXT
-  URL
 }
 
 model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
   name      String?
-  createdAt DateTime @default(now())
-  lists     List[]
   handle    String   @unique
-  avatarUrl String?
   bio       String?
-  // sample data flags
-  isSample  Boolean  @default(false)
-  seedBatch String?
+  avatarUrl String?
+  createdAt DateTime @default(now())
 
-  // social
+  lists     List[]
   following Follow[] @relation("following")
   followers Follow[] @relation("followers")
   likes     ListLike[]
   saves     ListSave[]
-  comments  ListComment[]
 
-  // auth (NextAuth)
   accounts  Account[]
   sessions  Session[]
+}
 
-  // vibes summary
-  vibes     UserVibe[]
+model Author {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  slug      String   @unique
+  createdAt DateTime @default(now())
+
+  books     Book[]
+}
+
+model Book {
+  id                Int      @id @default(autoincrement())
+  canonicalTitle    String
+  slug              String   @unique
+  authorId          Int
+  author            Author   @relation(fields: [authorId], references: [id])
+  coverUrl          String?
+  publicationYear   Int?
+  genrePrimary      String?
+  openLibraryWorkId String   @unique
+  createdAt         DateTime @default(now())
+
+  listItems         ListItem[]
+
+  @@index([canonicalTitle])
+  @@index([authorId])
 }
 
 model List {
@@ -58,175 +64,83 @@ model List {
   owner       User       @relation(fields: [ownerId], references: [id])
   title       String
   description String?
-  visibility  Visibility @default(PUBLIC)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  items       ListItem[]
+  isRanked    Boolean    @default(true)
   status      ListStatus @default(DRAFT)
   slug        String     @unique
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
   publishedAt DateTime?
   likesCount  Int        @default(0)
   savesCount  Int        @default(0)
-  commentsCount Int      @default(0)
+
+  items       ListItem[]
   likes       ListLike[]
   saves       ListSave[]
-  comments    ListComment[]
-  // sample data flags
-  isSample   Boolean    @default(false)
-  seedBatch  String?
 
-  // vibes and lineage
-  vibes      ListVibe[]
-  lineage    ListLineage?
-  childrenLineages ListLineage[] @relation("LineageParentList")
-}
-
-model Item {
-  id         Int         @id @default(autoincrement())
-  url        String?
-  title      String?
-  note       String?
-  createdAt  DateTime    @default(now())
-  listItems  ListItem[]
-  kind       ItemKind    @default(TEXT)
-  slug       String      @unique
-  normalizedKey String   @unique
-  aliases    ItemAlias[]
-  // sample data flags
-  isSample   Boolean     @default(false)
-  seedBatch  String?
-
-  childrenLineages ListLineage[] @relation("LineageParentItem")
+  @@index([ownerId, status])
+  @@index([status, publishedAt])
 }
 
 model ListItem {
-  listId  Int
-  itemId  Int
+  listId   Int
+  bookId   Int
   position Int
-  addedAt DateTime @default(now())
+  addedAt  DateTime @default(now())
 
-  list List @relation(fields: [listId], references: [id])
-  item Item @relation(fields: [itemId], references: [id])
+  list List @relation(fields: [listId], references: [id], onDelete: Cascade)
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
 
-  @@id([listId, itemId])
+  @@id([listId, bookId])
   @@unique([listId, position])
-}
-
-model ItemAlias {
-  id        Int      @id @default(autoincrement())
-  itemId    Int
-  item      Item     @relation(fields: [itemId], references: [id])
-  aliasKey  String   @unique
-  createdAt DateTime @default(now())
+  @@index([bookId])
 }
 
 model Follow {
   followerId Int
   followeeId Int
-  follower   User @relation("following", fields: [followerId], references: [id])
-  followee   User @relation("followers", fields: [followeeId], references: [id])
   createdAt  DateTime @default(now())
+
+  follower User @relation("following", fields: [followerId], references: [id], onDelete: Cascade)
+  followee User @relation("followers", fields: [followeeId], references: [id], onDelete: Cascade)
 
   @@id([followerId, followeeId])
 }
 
 model ListLike {
-  userId   Int
-  listId   Int
-  user     User @relation(fields: [userId], references: [id])
-  list     List @relation(fields: [listId], references: [id])
+  userId    Int
+  listId    Int
   createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  list List @relation(fields: [listId], references: [id], onDelete: Cascade)
 
   @@id([userId, listId])
 }
 
 model ListSave {
-  userId   Int
-  listId   Int
-  user     User @relation(fields: [userId], references: [id])
-  list     List @relation(fields: [listId], references: [id])
+  userId    Int
+  listId    Int
   createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  list List @relation(fields: [listId], references: [id], onDelete: Cascade)
 
   @@id([userId, listId])
 }
 
-model ListComment {
-  id        Int      @id @default(autoincrement())
-  listId    Int
-  userId    Int
-  body      String
-  parentId  Int?
-  createdAt DateTime @default(now())
-
-  list      List @relation(fields: [listId], references: [id])
-  user      User @relation(fields: [userId], references: [id])
-}
-
-/// Vibes represent recurring cross-list signals
-model Vibe {
-  id         Int       @id @default(autoincrement())
-  slug       String    @unique
-  label      String
-  description String?
-  createdAt  DateTime  @default(now())
-  // sample flags (if seeding vibes)
-  isSample   Boolean   @default(false)
-  seedBatch  String?
-
-  lists      ListVibe[]
-  users      UserVibe[]
-}
-
-model ListVibe {
-  listId  Int
-  vibeId  Int
-  weight  Int      @default(1)
-  source  String?  // 'auto' | 'user'
-  addedAt DateTime @default(now())
-
-  list    List @relation(fields: [listId], references: [id])
-  vibe    Vibe @relation(fields: [vibeId], references: [id])
-
-  @@id([listId, vibeId])
-}
-
-model UserVibe {
-  userId  Int
-  vibeId  Int
-  count   Int      @default(0)
-  lastTouchedAt DateTime?
-
-  user    User @relation(fields: [userId], references: [id])
-  vibe    Vibe @relation(fields: [vibeId], references: [id])
-
-  @@id([userId, vibeId])
-}
-
-model ListLineage {
-  id                  Int   @id @default(autoincrement())
-  listId              Int   @unique
-  spawnedFromListId   Int?
-  spawnedFromItemId   Int?
-
-  list                List  @relation(fields: [listId], references: [id])
-  parentList          List? @relation("LineageParentList", fields: [spawnedFromListId], references: [id])
-  parentItem          Item? @relation("LineageParentItem", fields: [spawnedFromItemId], references: [id])
-}
-
-/// NextAuth models (adapted for Int userId)
 model Account {
-  id                 Int     @id @default(autoincrement())
-  userId             Int
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?
-  access_token       String?
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?
-  session_state      String?
+  id                Int     @id @default(autoincrement())
+  userId            Int
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -234,10 +148,10 @@ model Account {
 }
 
 model Session {
-  id            String   @id @default(cuid())
-  sessionToken  String   @unique
-  userId        Int
-  expires       DateTime
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       Int
+  expires      DateTime
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

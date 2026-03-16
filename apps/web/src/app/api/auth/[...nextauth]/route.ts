@@ -34,7 +34,7 @@ export const authConfig = {
             const handle = await uniqueHandle(base);
             user = await prisma.user.create({ data: { email, name: name || null, handle } });
           }
-          return { id: String(user.id), email: user.email, name: user.name } as any;
+          return { id: String(user.id), email: user.email, name: user.name ?? undefined };
         } catch (err) {
           console.error("[auth.credentials.authorize] error", err);
           return null;
@@ -45,7 +45,7 @@ export const authConfig = {
   callbacks: {
     async session({ session, token }) {
       if (session.user && token.sub) {
-        (session.user as any).id = Number(token.sub);
+        ((session.user as unknown) as { id?: number }).id = Number(token.sub);
       }
       return session;
     },
@@ -55,7 +55,7 @@ export const authConfig = {
       console.log("[auth.event.signIn]", { user: message.user?.email, account: message.account?.provider });
     },
     async signOut(message) {
-      const hasToken = typeof (message as any)?.token !== "undefined";
+      const hasToken = "token" in message;
       console.log("[auth.event.signOut]", { hasToken });
     },
   },

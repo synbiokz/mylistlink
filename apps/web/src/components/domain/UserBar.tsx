@@ -8,10 +8,6 @@ export function UserBar({ name = "Someone", handle = "user", avatarUrl = null as
         <div className="font-medium">{name}</div>
         <div className="muted">@{handle}</div>
       </div>
-      <div className="ml-auto">
-        <button className="px-3 py-1 rounded-md border border-[rgb(var(--color-border))] text-sm hover:bg-[rgb(var(--color-accent))]">Follow</button>
-      </div>
     </div>
   );
 }
-

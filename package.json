@@ -6,6 +6,10 @@
     "dev:web": "pnpm --filter web dev",
     "build:web": "pnpm --filter web build",
     "start:web": "pnpm --filter web start",
-    "lint:web": "pnpm --filter web lint"
+    "lint:web": "pnpm --filter web lint",
+    "typecheck:web": "pnpm --filter web typecheck",
+    "db:generate:web": "pnpm --filter web db:generate",
+    "db:push:web": "pnpm --filter web db:push",
+    "db:migrate:web": "pnpm --filter web db:migrate"
   }
 }

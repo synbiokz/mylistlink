@@ -8,7 +8,7 @@ export async function middleware(req: NextRequest) {
   const needsAuth = protectedPaths.some((p) => pathname.startsWith(p));
   if (!needsAuth) return NextResponse.next();
 
-  let token = null as any;
+  let token: Awaited<ReturnType<typeof getToken>> = null;
   try {
     token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
   } catch (err) {
