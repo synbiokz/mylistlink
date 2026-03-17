@@ -1,3 +1,4 @@
+import { CommentsSection } from "@/components/domain/CommentsSection";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ReactionBar } from "@/components/domain/ReactionBar";
@@ -75,6 +76,8 @@ export default async function ListPage({ params }: { params: Promise<{ slug: str
           )}
         </div>
       </section>
+
+      <CommentsSection listId={data.list.id} listSlug={data.list.slug} initialComments={data.comments} />
     </div>
   );
 }

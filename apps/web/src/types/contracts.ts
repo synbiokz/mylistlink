@@ -40,6 +40,18 @@ export const DraftSchema = z.object({
 });
 export type Draft = z.infer<typeof DraftSchema>;
 
+export const ListCommentSchema = z.object({
+  id: z.number().int(),
+  body: z.string(),
+  createdAt: z.string(),
+  author: z.object({
+    handle: z.string(),
+    name: z.string().nullable(),
+    avatarUrl: z.string().nullable(),
+  }),
+});
+export type ListComment = z.infer<typeof ListCommentSchema>;
+
 export const SessionSchema = z.object({
   user: z.object({ id: z.number().int(), email: z.string().nullable(), name: z.string().nullable() }),
 });
@@ -50,3 +62,4 @@ export const DraftCreateResponseSchema = z.object({ list: z.object({ id: z.numbe
 export const LatestDraftResponseSchema = z.object({ draft: DraftSchema.nullable() });
 export const BookResolveResponseSchema = z.object({ bookId: z.number().int(), slug: z.string(), book: BookSchema.optional() });
 export const BookSearchResponseSchema = z.object({ q: z.string(), books: z.array(BookSearchResultSchema) });
+export const CommentCreateResponseSchema = z.object({ comment: ListCommentSchema });

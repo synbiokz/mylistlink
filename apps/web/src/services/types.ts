@@ -1,4 +1,4 @@
-import type { BookSearchResult, Draft, Slot } from "@/types/contracts";
+import type { BookSearchResult, Draft, ListComment, Slot } from "@/types/contracts";
 import type { ApiError } from "@/types/errors";
 
 export type SlotsResult = { slots: Slot[]; error?: ApiError };
@@ -30,9 +30,14 @@ export interface UsersService {
   getMe(): Promise<{ id: number; handle: string; email: string | null; name: string | null; avatarUrl: string | null } | null>;
 }
 
+export interface CommentsService {
+  create(listId: number, body: string): Promise<ListComment>;
+}
+
 export interface Services {
   lists: ListsService;
   books: BooksService;
   auth: AuthService;
   users?: UsersService;
+  comments: CommentsService;
 }

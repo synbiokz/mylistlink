@@ -3,15 +3,17 @@ import {
   BookResolveResponseSchema,
   BookSearchResponseSchema,
   BookSearchResultSchema,
+  CommentCreateResponseSchema,
   DraftCreateResponseSchema,
   LatestDraftResponseSchema,
   SessionSchema,
+  type ListComment,
   SlotSnapshotResponseSchema,
   type Draft,
   type Slot,
 } from "@/types/contracts";
 import type { ApiError } from "@/types/errors";
-import type { AuthService, BooksService, ListsService, Services, UsersService } from "./types";
+import type { AuthService, BooksService, CommentsService, ListsService, Services, UsersService } from "./types";
 
 async function parseJson<T extends z.ZodTypeAny>(res: Response, schema: T) {
   const data = await res.json().catch(() => ({}));
@@ -137,4 +139,17 @@ const users: UsersService = {
   },
 };
 
-export const apiAdapter: Services = { lists, books, auth, users };
+const comments: CommentsService = {
+  async create(listId, body) {
+    const res = await fetch(`/api/lists/${listId}/comments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ body }),
+    });
+    if (!res.ok) throw parseError(res, await res.json().catch(() => null));
+    const data = await parseJson(res, CommentCreateResponseSchema);
+    return data.comment as ListComment;
+  },
+};
+
+export const apiAdapter: Services = { lists, books, auth, users, comments };

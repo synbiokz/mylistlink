@@ -4,10 +4,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getServices } from "@/services";
 import type { Draft } from "@/types/contracts";
 
-export function useLatestDraft() {
+export function useLatestDraft(opts?: { enabled?: boolean }) {
   return useQuery<Draft | null>({
     queryKey: ["draft", "latest"],
     queryFn: async () => getServices().lists.getLatestDraft(),
+    enabled: opts?.enabled ?? true,
   });
 }
 

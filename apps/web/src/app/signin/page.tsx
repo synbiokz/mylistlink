@@ -48,8 +48,8 @@ function SignInForm() {
   return (
     <div className="max-w-md space-y-6">
       <div>
-        <h1 className="mb-2 h1">Sign in</h1>
-        <p className="muted">Continue with email. Additional providers can come later.</p>
+        <h1 className="mb-2 h1">Continue with email</h1>
+        <p className="muted">Browsing stays open to everyone. Publishing lists and posting comments finish after email sign-up.</p>
       </div>
 
       <form onSubmit={onSubmit} className="surface space-y-3 p-4">
@@ -59,7 +59,7 @@ function SignInForm() {
         </div>
         <div className="flex gap-2">
           <Button type="submit" variant="primary" disabled={loading || !email}>
-            {loading ? "Signing in..." : "Sign in"}
+            {loading ? "Continuing..." : "Continue"}
           </Button>
         </div>
         {error ? <p className="text-sm text-red-500">{error}</p> : null}
@@ -72,7 +72,7 @@ function SignInFallback() {
   return (
     <div className="max-w-md space-y-6">
       <div>
-        <h1 className="mb-2 h1">Sign in</h1>
+        <h1 className="mb-2 h1">Continue with email</h1>
         <p className="muted">Loading sign-in form...</p>
       </div>
     </div>

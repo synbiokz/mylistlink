@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { featuredListsForBook, getBookBySlug, trendingBooks } from "@/data/books";
+import { listCommentsForList } from "@/data/comments";
 import { getListBySlug, listByUser, listRecentPublished, listTrendingPublished } from "@/data/lists";
 import { getReactionState } from "@/data/reactions";
 import { overlapsForList, hotOverlaps } from "@/data/overlaps";
@@ -148,6 +149,7 @@ export async function getListPageData(slug: string, viewerId?: number | null) {
     overlapsForList(list.id, 6),
     getReactionState(list.id, viewerId ?? null),
   ]);
+  const comments = await listCommentsForList(list.id);
 
   const sharedBooksByList = new Map<number, string[]>();
   if (overlaps.length > 0) {
@@ -181,6 +183,12 @@ export async function getListPageData(slug: string, viewerId?: number | null) {
     overlaps,
     reactions,
     trails,
+    comments: comments.map((comment) => ({
+      id: comment.id,
+      body: comment.body,
+      createdAt: comment.createdAt.toISOString(),
+      author: comment.author,
+    })),
   };
 }
 
