@@ -15,6 +15,13 @@ import {
 
 export const dynamic = "force-dynamic";
 
+type TrendingList = Awaited<ReturnType<typeof getTrendingListPreviews>>[number];
+type NewestList = Awaited<ReturnType<typeof getNewestListPreviews>>[number];
+type TrendingBook = Awaited<ReturnType<typeof getTrendingBookCards>>[number];
+type OverlapCard = Awaited<ReturnType<typeof getHotOverlapCards>>[number];
+type StarterGenre = Awaited<ReturnType<typeof getStarterGenres>>[number];
+type TopCurator = Awaited<ReturnType<typeof getTopCurators>>[number];
+
 export default async function HomePage() {
   const [stats, trendingLists, newestLists, trendingBooks, overlaps, genres, curators] = await Promise.all([
     getSiteStats(),
@@ -61,7 +68,7 @@ export default async function HomePage() {
               <h2 className="mt-2 text-2xl font-semibold">Readers shaping the graph</h2>
             </div>
             <div className="space-y-3">
-              {curators.map((curator) => (
+              {curators.map((curator: TopCurator) => (
                 <Link
                   key={curator.id}
                   href={`/user/${curator.handle}`}
@@ -94,7 +101,7 @@ export default async function HomePage() {
           <Link href="/lists" className="text-sm font-medium hover:underline">All lists</Link>
         </div>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {trendingLists.map((list) => (
+          {trendingLists.map((list: TrendingList) => (
             <ListCard
               key={list.id}
               title={list.title}
@@ -119,7 +126,7 @@ export default async function HomePage() {
           <h2 className="h2 mt-2">Books showing up in the most lists</h2>
         </div>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {trendingBooks.map((book) => (
+          {trendingBooks.map((book: TrendingBook) => (
             <Card key={book.id} className="panel-glow">
               <div className="eyebrow">{book.genrePrimary ?? "Book"}</div>
               <div className="mt-2 text-lg font-semibold">
@@ -140,7 +147,7 @@ export default async function HomePage() {
           <h2 className="h2 mt-2">Where different vibes collide</h2>
         </div>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          {overlaps.map((row, index) => (
+          {overlaps.map((row: OverlapCard, index) => (
             <Card key={`${row.a.id}-${row.b.id}-${index}`} className="panel-glow">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 space-y-3">
@@ -173,7 +180,7 @@ export default async function HomePage() {
           <h2 className="h2 mt-2">Easy ways into the graph</h2>
         </div>
         <div className="flex flex-wrap gap-3">
-          {genres.map((genre) => (
+          {genres.map((genre: StarterGenre) => (
             <div key={genre.genre} className="rounded-full border border-[rgb(var(--color-border))] bg-white/60 px-4 py-2 text-sm">
               {genre.genre} <span className="muted">({genre.count})</span>
             </div>
@@ -187,7 +194,7 @@ export default async function HomePage() {
           <h2 className="h2 mt-2">Recently published book lists</h2>
         </div>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {newestLists.map((list) => (
+          {newestLists.map((list: NewestList) => (
             <ListCard
               key={list.id}
               title={list.title}

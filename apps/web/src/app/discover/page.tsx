@@ -4,6 +4,12 @@ import { getHotOverlapCards, getNewestListPreviews, getStarterGenres, getTrendin
 
 export const dynamic = "force-dynamic";
 
+type TrendingList = Awaited<ReturnType<typeof getTrendingListPreviews>>[number];
+type NewestList = Awaited<ReturnType<typeof getNewestListPreviews>>[number];
+type TrendingBook = Awaited<ReturnType<typeof getTrendingBookCards>>[number];
+type OverlapCard = Awaited<ReturnType<typeof getHotOverlapCards>>[number];
+type StarterGenre = Awaited<ReturnType<typeof getStarterGenres>>[number];
+
 export default async function DiscoverPage() {
   const [trendingLists, newestLists, trendingBooks, overlaps, genres] = await Promise.all([
     getTrendingListPreviews(9),
@@ -23,7 +29,7 @@ export default async function DiscoverPage() {
       <section className="space-y-4">
         <h2 className="h2">Trending lists</h2>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {trendingLists.map((list) => (
+          {trendingLists.map((list: TrendingList) => (
             <ListCard
               key={list.id}
               title={list.title}
@@ -44,7 +50,7 @@ export default async function DiscoverPage() {
       <section className="space-y-4">
         <h2 className="h2">Books with the strongest list gravity</h2>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
-          {trendingBooks.map((book) => (
+          {trendingBooks.map((book: TrendingBook) => (
             <Card key={book.id}>
               <div className="text-sm muted">{book.genrePrimary ?? "Book"}</div>
               <div className="mt-2 font-semibold">{book.title}</div>
@@ -58,7 +64,7 @@ export default async function DiscoverPage() {
       <section className="space-y-4">
         <h2 className="h2">High-overlap matches</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {overlaps.map((row, index) => (
+          {overlaps.map((row: OverlapCard, index) => (
             <Card key={`${row.a.id}-${row.b.id}-${index}`}>
               <div className="font-semibold">{row.a.title}</div>
               <div className="text-sm muted">with {row.b.title}</div>
@@ -71,7 +77,7 @@ export default async function DiscoverPage() {
       <section className="space-y-4">
         <h2 className="h2">Starter genres</h2>
         <div className="flex flex-wrap gap-3">
-          {genres.map((genre) => (
+          {genres.map((genre: StarterGenre) => (
             <div key={genre.genre} className="rounded-full border border-[rgb(var(--color-border))] bg-white/60 px-4 py-2 text-sm">
               {genre.genre} <span className="muted">({genre.count})</span>
             </div>
@@ -82,7 +88,7 @@ export default async function DiscoverPage() {
       <section className="space-y-4">
         <h2 className="h2">Newest lists</h2>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {newestLists.map((list) => (
+          {newestLists.map((list: NewestList) => (
             <ListCard
               key={list.id}
               title={list.title}
