@@ -4,12 +4,16 @@ import { notFound } from "next/navigation";
 import { ReactionBar } from "@/components/domain/ReactionBar";
 import { TrailChips } from "@/components/domain/TrailChips";
 import { getListPageData } from "@/data/discovery";
+import { auth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function ListPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const data = await getListPageData(slug);
+  const session = await auth();
+  const rawViewerId = session?.user?.id ? Number(session.user.id) : null;
+  const viewerId = rawViewerId && Number.isInteger(rawViewerId) ? rawViewerId : null;
+  const data = await getListPageData(slug, viewerId);
   if (!data) return notFound();
 
   return (

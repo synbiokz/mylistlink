@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { resolveExternalBook } from "@/data/books";
+import { requireSession } from "@/lib/auth";
 
 export async function POST(req: Request) {
+  if (!(await requireSession(req))) {
+    return NextResponse.json({ error: { code: "AUTH_UNAUTHORIZED" } }, { status: 401 });
+  }
+
   const body = await req.json().catch(() => null);
   if (!body?.sourceId || !body?.title) {
     return NextResponse.json({ error: { code: "INPUT_INVALID", message: "sourceId and title are required" } }, { status: 400 });

@@ -3,13 +3,14 @@
   "private": true,
   "packageManager": "pnpm@9.15.9",
   "scripts": {
-    "dev:web": "pnpm --filter web dev",
-    "build:web": "pnpm --filter web build",
-    "start:web": "pnpm --filter web start",
-    "lint:web": "pnpm --filter web lint",
-    "typecheck:web": "pnpm --filter web typecheck",
-    "db:generate:web": "pnpm --filter web db:generate",
-    "db:push:web": "pnpm --filter web db:push",
-    "db:migrate:web": "pnpm --filter web db:migrate"
+    "dev:web": "corepack pnpm --filter web dev",
+    "build:web": "corepack pnpm --filter web build",
+    "start:web": "corepack pnpm --filter web start",
+    "lint:web": "corepack pnpm --filter web lint",
+    "typecheck:web": "corepack pnpm --filter web typecheck",
+    "db:generate:web": "corepack pnpm --filter web db:generate",
+    "db:push:web": "corepack pnpm --filter web db:push",
+    "db:migrate:web": "corepack pnpm --filter web db:migrate",
+    "db:migrate:deploy:web": "corepack pnpm --filter web db:migrate:deploy"
   }
 }

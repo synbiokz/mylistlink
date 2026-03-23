@@ -4,8 +4,8 @@ export type ReactionKind = "like" | "save";
 
 export async function getReactionState(listId: number, userId?: number | null) {
   const [list, liked, saved] = await Promise.all([
-    prisma.list.findUnique({
-      where: { id: listId },
+    prisma.list.findFirst({
+      where: { id: listId, status: "PUBLISHED" },
       select: { id: true, likesCount: true, savesCount: true },
     }),
     userId ? prisma.listLike.findUnique({ where: { userId_listId: { userId, listId } } }) : null,
@@ -24,6 +24,12 @@ export async function getReactionState(listId: number, userId?: number | null) {
 
 export async function toggleReaction(listId: number, userId: number, kind: ReactionKind) {
   return prisma.$transaction(async (tx) => {
+    const list = await tx.list.findFirst({
+      where: { id: listId, status: "PUBLISHED" },
+      select: { id: true },
+    });
+    if (!list) throw new Error("List not found");
+
     if (kind === "like") {
       const existing = await tx.listLike.findUnique({ where: { userId_listId: { userId, listId } } });
       if (existing) {
@@ -44,11 +50,11 @@ export async function toggleReaction(listId: number, userId: number, kind: React
       }
     }
 
-    const list = await tx.list.findUnique({
+    const updatedList = await tx.list.findUnique({
       where: { id: listId },
       select: { likesCount: true, savesCount: true },
     });
-    if (!list) throw new Error("List not found");
+    if (!updatedList) throw new Error("List not found");
 
     const [liked, saved] = await Promise.all([
       tx.listLike.findUnique({ where: { userId_listId: { userId, listId } } }),
@@ -56,8 +62,8 @@ export async function toggleReaction(listId: number, userId: number, kind: React
     ]);
 
     return {
-      likesCount: Math.max(0, list.likesCount),
-      savesCount: Math.max(0, list.savesCount),
+      likesCount: Math.max(0, updatedList.likesCount),
+      savesCount: Math.max(0, updatedList.savesCount),
       liked: !!liked,
       saved: !!saved,
     };

@@ -1,4 +1,10 @@
+import NextAuth from "next-auth";
 import { getToken } from "next-auth/jwt";
+import { authConfig } from "@/lib/authConfig";
+
+const nextAuth = NextAuth(authConfig);
+
+export const { handlers, auth, signIn, signOut } = nextAuth;
 
 export async function requireSession(req: Request) {
   try {

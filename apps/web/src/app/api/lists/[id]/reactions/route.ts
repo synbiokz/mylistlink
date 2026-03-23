@@ -22,13 +22,18 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
   const session = await requireSession(req);
   if (!session) return NextResponse.json({ error: { code: "AUTH_UNAUTHORIZED" } }, { status: 401 });
 
-  const list = await prisma.list.findUnique({ where: { id: listId }, select: { id: true } });
-  if (!list) return NextResponse.json({ error: { code: "NOT_FOUND" } }, { status: 404 });
+  const list = await prisma.list.findUnique({ where: { id: listId }, select: { id: true, status: true } });
+  if (!list || list.status !== "PUBLISHED") return NextResponse.json({ error: { code: "NOT_FOUND" } }, { status: 404 });
 
   const body = await req.json().catch(() => ({}));
   if (body?.kind !== "like" && body?.kind !== "save") {
     return NextResponse.json({ error: { code: "INPUT_INVALID", message: "invalid reaction kind" } }, { status: 400 });
   }
 
-  return NextResponse.json(await toggleReaction(listId, session.user.id, body.kind as ReactionKind));
+  try {
+    return NextResponse.json(await toggleReaction(listId, session.user.id, body.kind as ReactionKind));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to update reaction";
+    return NextResponse.json({ error: { code: "NOT_FOUND", message } }, { status: 404 });
+  }
 }

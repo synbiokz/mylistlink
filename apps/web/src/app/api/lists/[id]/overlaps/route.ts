@@ -9,8 +9,8 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
     return NextResponse.json({ error: { code: "INPUT_INVALID", message: "invalid id" } }, { status: 400 });
   }
 
-  const list = await prisma.list.findUnique({ where: { id: listId } });
-  if (!list) return NextResponse.json({ error: { code: "NOT_FOUND" } }, { status: 404 });
+  const list = await prisma.list.findUnique({ where: { id: listId }, select: { id: true, status: true } });
+  if (!list || list.status !== "PUBLISHED") return NextResponse.json({ error: { code: "NOT_FOUND" } }, { status: 404 });
 
   return NextResponse.json({ listId, overlaps: await overlapsForList(listId, 10) });
 }

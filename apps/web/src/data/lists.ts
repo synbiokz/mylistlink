@@ -143,8 +143,8 @@ export async function publishList(listId: number) {
 }
 
 export async function getListBySlug(slug: string) {
-  return prisma.list.findUnique({
-    where: { slug },
+  return prisma.list.findFirst({
+    where: { slug, status: "PUBLISHED" },
     include: {
       owner: true,
       items: {
