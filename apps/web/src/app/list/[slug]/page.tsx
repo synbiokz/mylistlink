@@ -11,7 +11,20 @@ export const dynamic = "force-dynamic";
 type ListPageData = NonNullable<Awaited<ReturnType<typeof getListPageData>>>;
 type ListItem = ListPageData["list"]["items"][number];
 type Trail = ListPageData["trails"][number];
-type Overlap = ListPageData["overlaps"][number];
+type Overlap = {
+  list: {
+    id: number;
+    slug: string;
+    title: string;
+    owner: {
+      handle: string;
+      name: string | null;
+      avatarUrl: string | null;
+    };
+  };
+  overlap: number;
+  similarity: number;
+};
 
 export default async function ListPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
