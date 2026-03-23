@@ -64,7 +64,7 @@ export default async function DiscoverPage() {
       <section className="space-y-4">
         <h2 className="h2">High-overlap matches</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {overlaps.map((row: OverlapCard, index) => (
+          {overlaps.map((row: OverlapCard, index: number) => (
             <Card key={`${row.a.id}-${row.b.id}-${index}`}>
               <div className="font-semibold">{row.a.title}</div>
               <div className="text-sm muted">with {row.b.title}</div>

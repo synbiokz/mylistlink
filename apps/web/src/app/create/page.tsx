@@ -217,7 +217,7 @@ export default function CreatePage() {
   async function addAt(positionIndex: number, result: BookSearchResult) {
     if (usingGuestDraft || !list) {
       setSlots((current) =>
-        current.map((slot, index) => (index === positionIndex ? withCandidate(positionIndex + 1, result) : slot))
+        current.map((slot, index: number) => (index === positionIndex ? withCandidate(positionIndex + 1, result) : slot))
       );
       return;
     }
@@ -242,7 +242,7 @@ export default function CreatePage() {
   async function removeAt(positionIndex: number) {
     if (usingGuestDraft || !list) {
       setSlots((current) =>
-        current.map((slot, index) => (index === positionIndex ? emptySlots()[positionIndex] : slot))
+        current.map((slot, index: number) => (index === positionIndex ? emptySlots()[positionIndex] : slot))
       );
       return;
     }
@@ -309,7 +309,7 @@ export default function CreatePage() {
               </div>
               {notice ? <div className="mb-2 rounded bg-[rgb(var(--color-accent))] px-3 py-1 text-sm">{notice}</div> : null}
               <ol className="grid grid-cols-1 gap-2">
-                {slots.map((slot, index) => (
+                {slots.map((slot, index: number) => (
                   <li key={slot.position} className="rounded border p-3">
                     <div className="mb-2 flex items-center justify-between text-xs">
                       <span>Position {index + 1}</span>
@@ -341,7 +341,7 @@ export default function CreatePage() {
             <div className="mb-2 font-medium">Search books</div>
             <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by title or author" />
             <ul className="mt-3 max-h-[70vh] overflow-auto pr-1 text-sm">
-              {(search.data || []).map((result, index) => (
+              {(search.data || []).map((result, index: number) => (
                 <li key={`${result.sourceId}:${index}`} className="flex items-center justify-between gap-3 border-b py-2 last:border-b-0">
                   <div className="flex min-w-0 items-center gap-3">
                     {result.coverUrl ? (

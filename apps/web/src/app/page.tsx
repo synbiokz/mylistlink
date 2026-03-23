@@ -147,7 +147,7 @@ export default async function HomePage() {
           <h2 className="h2 mt-2">Where different vibes collide</h2>
         </div>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          {overlaps.map((row: OverlapCard, index) => (
+          {overlaps.map((row: OverlapCard, index: number) => (
             <Card key={`${row.a.id}-${row.b.id}-${index}`} className="panel-glow">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 space-y-3">

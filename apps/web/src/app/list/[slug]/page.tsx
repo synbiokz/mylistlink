@@ -46,7 +46,7 @@ export default async function ListPage({ params }: { params: Promise<{ slug: str
       <section className="space-y-3">
         <h2 className="h2">The seven books</h2>
         <ol className="space-y-3">
-          {data.list.items.map((item: ListItem, index) => (
+          {data.list.items.map((item: ListItem, index: number) => (
             <li key={item.bookId} className="flex items-start gap-3">
               <div className="mt-1 font-mono text-sm">{index + 1}.</div>
               <Link href={`/book/${item.book.slug}`} className="surface flex-1 p-4 transition hover:-translate-y-0.5">
