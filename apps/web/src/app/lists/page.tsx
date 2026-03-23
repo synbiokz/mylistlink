@@ -3,6 +3,8 @@ import { getNewestListPreviews } from "@/data/discovery";
 
 export const dynamic = "force-dynamic";
 
+type NewestList = Awaited<ReturnType<typeof getNewestListPreviews>>[number];
+
 export default async function ListsPage() {
   const lists = await getNewestListPreviews(18);
 
@@ -13,7 +15,7 @@ export default async function ListsPage() {
         <p className="muted mt-2">Public 7-book lists published by the community.</p>
       </div>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {lists.map((list) => (
+        {lists.map((list: NewestList) => (
           <ListCard
             key={list.id}
             title={list.title}

@@ -2,6 +2,11 @@ import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Avatar } from "@/components/ui/Avatar";
 
+type PreviewItem = {
+  label: string;
+  href: string;
+};
+
 export function ListCard({
   title = "Untitled List",
   owner = { name: "reader", avatarUrl: null as string | null, handle: "user" },
@@ -18,7 +23,7 @@ export function ListCard({
   description?: string | null;
   overlap?: number;
   publishedLabel?: string;
-  previewItems?: Array<{ label: string; href: string }>;
+  previewItems?: PreviewItem[];
   metrics?: { likes: number; saves: number };
 }) {
   return (
@@ -41,7 +46,7 @@ export function ListCard({
       </div>
       {previewItems.length > 0 ? (
         <div className="mt-4 flex flex-wrap gap-2">
-          {previewItems.slice(0, 3).map((item) => (
+          {previewItems.slice(0, 3).map((item: PreviewItem) => (
             <Link
               key={`${item.href}:${item.label}`}
               href={item.href}

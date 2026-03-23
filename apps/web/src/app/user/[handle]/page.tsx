@@ -6,6 +6,10 @@ import { getUserPageData } from "@/data/discovery";
 
 export const dynamic = "force-dynamic";
 
+type UserPageData = NonNullable<Awaited<ReturnType<typeof getUserPageData>>>;
+type UserList = UserPageData["lists"][number];
+type SignatureBook = UserPageData["signatureBooks"][number];
+
 export default async function UserPage({ params }: { params: Promise<{ handle: string }> }) {
   const { handle } = await params;
   const data = await getUserPageData(handle);
@@ -21,7 +25,7 @@ export default async function UserPage({ params }: { params: Promise<{ handle: s
           <div className="text-sm muted">No published lists yet.</div>
         ) : (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {data.lists.map((list) => (
+            {data.lists.map((list: UserList) => (
               <ListCard
                 key={list.id}
                 title={list.title}
@@ -46,7 +50,7 @@ export default async function UserPage({ params }: { params: Promise<{ handle: s
           <div className="text-sm muted">No repeated books yet.</div>
         ) : (
           <div className="flex flex-wrap gap-3">
-            {data.signatureBooks.map((book) => (
+            {data.signatureBooks.map((book: SignatureBook) => (
               <Link key={book.id} href={`/book/${book.slug}`} className="rounded-full border border-[rgb(var(--color-border))] bg-white/60 px-4 py-2 text-sm">
                 {book.title} <span className="muted">({book.count})</span>
               </Link>

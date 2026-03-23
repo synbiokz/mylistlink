@@ -8,6 +8,11 @@ import { auth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
+type ListPageData = NonNullable<Awaited<ReturnType<typeof getListPageData>>>;
+type ListItem = ListPageData["list"]["items"][number];
+type Trail = ListPageData["trails"][number];
+type Overlap = ListPageData["overlaps"][number];
+
 export default async function ListPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const session = await auth();
@@ -41,7 +46,7 @@ export default async function ListPage({ params }: { params: Promise<{ slug: str
       <section className="space-y-3">
         <h2 className="h2">The seven books</h2>
         <ol className="space-y-3">
-          {data.list.items.map((item, index) => (
+          {data.list.items.map((item: ListItem, index) => (
             <li key={item.bookId} className="flex items-start gap-3">
               <div className="mt-1 font-mono text-sm">{index + 1}.</div>
               <Link href={`/book/${item.book.slug}`} className="surface flex-1 p-4 transition hover:-translate-y-0.5">
@@ -55,7 +60,7 @@ export default async function ListPage({ params }: { params: Promise<{ slug: str
 
       <section className="space-y-3">
         <h2 className="h2">Follow the trail</h2>
-        <TrailChips items={data.trails.map((trail) => ({ href: trail.href, label: trail.label, count: trail.count }))} />
+        <TrailChips items={data.trails.map((trail: Trail) => ({ href: trail.href, label: trail.label, count: trail.count }))} />
       </section>
 
       <section className="space-y-3">
@@ -64,7 +69,7 @@ export default async function ListPage({ params }: { params: Promise<{ slug: str
           {data.overlaps.length === 0 ? (
             <div className="text-sm muted">No overlap matches yet.</div>
           ) : (
-            data.overlaps.map((overlap) => (
+            data.overlaps.map((overlap: Overlap) => (
               <div key={overlap.list.id} className="surface flex items-center justify-between gap-4 p-4">
                 <div>
                   <Link href={`/list/${overlap.list.slug}`} className="font-semibold hover:underline">

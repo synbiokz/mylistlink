@@ -13,7 +13,7 @@ export function TrailChips({ items }: { items: Trail[] }) {
 
   return (
     <div className="flex flex-wrap gap-2">
-      {items.map((item) => (
+      {items.map((item: Trail) => (
         <Link
           key={`${item.href}:${item.label}`}
           href={item.href}

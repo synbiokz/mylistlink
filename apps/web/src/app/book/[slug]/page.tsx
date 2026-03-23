@@ -5,6 +5,9 @@ import { getBookPageData } from "@/data/discovery";
 
 export const dynamic = "force-dynamic";
 
+type BookPageData = NonNullable<Awaited<ReturnType<typeof getBookPageData>>>;
+type BookList = BookPageData["lists"][number];
+
 export default async function BookPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const data = await getBookPageData(slug);
@@ -26,7 +29,7 @@ export default async function BookPage({ params }: { params: Promise<{ slug: str
           <div className="text-sm muted">No lists yet.</div>
         ) : (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {data.lists.map((list) => (
+            {data.lists.map((list: BookList) => (
               <ListCard
                 key={list.id}
                 title={list.title}
