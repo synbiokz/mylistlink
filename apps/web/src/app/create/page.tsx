@@ -91,6 +91,7 @@ export default function CreatePage() {
   const session = useSession();
   const signedIn = !!session.data?.user;
   const sessionResolved = session.isFetched;
+  const authPending = !sessionResolved;
   const { data: draft } = useLatestDraft({ enabled: signedIn && !usingGuestDraft });
   const { mutateAsync: createDraft } = useCreateDraft();
   const search = useBookSearch(q, { enabled: true, limit: 10 });
@@ -197,6 +198,15 @@ export default function CreatePage() {
 
   async function onCreateDraft() {
     try {
+      if (authPending) return;
+
+      if (!signedIn) {
+        setUsingGuestDraft(true);
+        saveGuestDraft(toGuestDraft(title, description, slots));
+        setStep(2);
+        return;
+      }
+
       if (usingGuestDraft) {
         setStep(2);
         return;
@@ -210,6 +220,13 @@ export default function CreatePage() {
       setSlots(emptySlots());
       setStep(2);
     } catch (error) {
+      const apiError = error as { code?: string };
+      if (apiError?.code === "AUTH_UNAUTHORIZED") {
+        setUsingGuestDraft(true);
+        saveGuestDraft(toGuestDraft(title, description, slots));
+        setStep(2);
+        return;
+      }
       showNotice(friendlyMessage(error as never));
     }
   }
@@ -289,8 +306,8 @@ export default function CreatePage() {
             <label className="mb-1 block text-sm">One-line description</label>
             <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Optional, but useful for context." />
           </div>
-          <Button variant="primary" disabled={!title.trim() || syncingGuestDraft} onClick={onCreateDraft}>
-            {syncingGuestDraft ? "Saving..." : "Continue"}
+          <Button variant="primary" disabled={!title.trim() || syncingGuestDraft || authPending} onClick={onCreateDraft}>
+            {authPending ? "Preparing..." : syncingGuestDraft ? "Saving..." : "Continue"}
           </Button>
         </div>
       ) : (
