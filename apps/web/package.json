@@ -2,19 +2,17 @@
   "name": "web",
   "version": "0.1.0",
   "private": true,
-  "prisma": {
-    "schema": "prisma/schema.prisma"
-  },
   "scripts": {
     "dev": "next dev --turbopack",
+    "prebuild": "prisma generate --schema=prisma/schema.prisma",
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev",
-    "db:migrate:deploy": "prisma migrate deploy",
-    "db:push": "prisma db push"
+    "db:generate": "prisma generate --schema=prisma/schema.prisma",
+    "db:migrate": "prisma migrate dev --schema=prisma/schema.prisma",
+    "db:migrate:deploy": "prisma migrate deploy --schema=prisma/schema.prisma",
+    "db:push": "prisma db push --schema=prisma/schema.prisma"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.10.0",
